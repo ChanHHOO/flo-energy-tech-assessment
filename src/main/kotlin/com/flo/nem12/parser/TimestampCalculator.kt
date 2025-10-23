@@ -13,7 +13,7 @@ class TimestampCalculator {
      * Calculate timestamp from date and interval index
      *
      * @param date Base date
-     * @param intervalMinutes Interval duration in minutes
+     * @param intervalMinutes Interval duration in minutes (e.g., 30 for 30-minute intervals)
      * @param index Index starting from 0
      * @return LocalDateTime representing the timestamp
      *
@@ -23,11 +23,13 @@ class TimestampCalculator {
      * - calculate(2005-03-01, 30, 47) → 2005-03-01T23:30:00
      */
     fun calculate(date: LocalDate, intervalMinutes: Int, index: Int): LocalDateTime {
-        val totalMinutes = intervalMinutes * index
+        val totalMinutes = intervalMinutes * (index + 1)
         val hours = totalMinutes / 60
         val minutes = totalMinutes % 60
 
-        val time = LocalTime.of(hours, minutes)
-        return LocalDateTime.of(date, time)
+        val adjustedDate = date.plusDays((hours / 24).toLong())
+        val adjustedTime = LocalTime.of(hours % 24, minutes)
+
+        return LocalDateTime.of(adjustedDate, adjustedTime)
     }
 }

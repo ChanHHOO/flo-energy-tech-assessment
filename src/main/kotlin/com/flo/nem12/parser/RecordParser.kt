@@ -33,8 +33,7 @@ class RecordParser {
         // Parse consumption values starting from field 2
         val readings = mutableListOf<MeterReading>()
         val expectedIntervals = calculateExpectedIntervals(intervalMinutes)
-
-        for (i in 0 until expectedIntervals.coerceAtMost(fields.size - 2)) {
+        for (i in 0 until expectedIntervals) {
             val consumptionStr = fields[i + 2]
 
             // Skip empty or non-numeric values
