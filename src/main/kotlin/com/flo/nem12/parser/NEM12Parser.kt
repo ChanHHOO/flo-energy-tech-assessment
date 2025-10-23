@@ -41,7 +41,6 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
 
     private fun parseLine(line: String) {
         if (line.isEmpty()) return
-        print(line)
         val recordType = RecordType.fromLine(line)
 
         when (recordType) {
@@ -106,7 +105,7 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
         }
 
         // Validation 5: DateTime must be valid 12-character format (YYYYMMDDHHmm)
-        if (!DateTimeValidator.isValidNEM12DateTime(dateTime)) {
+        if (!DateTimeValidator.isValidISO8601DateTime(dateTime)) {
             throw ParseException(
                 state.lineNumber,
                 "DateTime must be 12 characters in YYYYMMDDHHmm format, found '$dateTime'"
