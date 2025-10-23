@@ -1,0 +1,25 @@
+package com.flo.nem12.model
+
+/**
+ * NEM12 file record type definitions
+ */
+enum class RecordType(val code: Int) {
+    HEADER(100),
+    NMI_DATA(200),
+    INTERVAL_DATA(300),
+    NMI_END(500),
+    FILE_END(900);
+
+    companion object {
+        fun fromCode(code: Int): RecordType {
+            return values().find { it.code == code }
+                ?: throw IllegalArgumentException("Unknown record type: $code")
+        }
+
+        fun fromLine(line: String): RecordType {
+            require(line.length >= 3) { "Invalid line format" }
+            val code = line.substring(0, 3).toInt()
+            return fromCode(code)
+        }
+    }
+}
