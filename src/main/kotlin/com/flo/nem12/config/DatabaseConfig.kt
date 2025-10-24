@@ -8,7 +8,7 @@ object DatabaseConfig {
     /**
      * Default batch size for batch inserts
      */
-    const val DEFAULT_BATCH_SIZE = 1000
+    const val DEFAULT_BATCH_SIZE = 50
 
     /**
      * SQLite meter_readings table schema

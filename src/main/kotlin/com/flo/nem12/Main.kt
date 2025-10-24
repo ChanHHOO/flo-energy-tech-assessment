@@ -2,7 +2,8 @@ package com.flo.nem12
 
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.exception.ParseException
-import com.flo.nem12.generator.SQLiteGenerator
+import com.flo.nem12.generator.GeneratorFactory
+import com.flo.nem12.generator.SQLGenerator
 import com.flo.nem12.parser.NEM12Parser
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Paths
@@ -34,9 +35,8 @@ fun main(args: Array<String>) {
         logger.info { "Output database: $outputPath" }
         logger.info { "Batch size: $batchSize" }
 
-        // Create SQLite generator
-        // It can be developed by Factory Pattern but now I considered only SQLite as DB Engine
-        val generator = SQLiteGenerator(outputPath, batchSize)
+        // Create SQL generator using Factory Pattern
+        val generator: SQLGenerator = GeneratorFactory.createSQLiteGenerator(outputPath, batchSize)
 
         // Parse file
         generator.use { gen ->
