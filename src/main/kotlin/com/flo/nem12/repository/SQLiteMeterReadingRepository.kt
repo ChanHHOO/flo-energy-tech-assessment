@@ -1,4 +1,4 @@
-package com.flo.nem12.generator
+package com.flo.nem12.repository
 
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.model.MeterReading
@@ -13,13 +13,13 @@ import java.util.UUID
 private val logger = KotlinLogging.logger {}
 
 /**
- * SQLite database generator with direct JDBC insertion
+ * SQLite implementation of MeterReadingRepository
  * Uses batch processing for optimal performance
  */
-class SQLiteGenerator(
+class SQLiteMeterReadingRepository(
     private val dbPath: Path,
     private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE
-) : SQLGenerator {
+) : MeterReadingRepository {
 
     private val connection: Connection
     private val insertStatement: PreparedStatement
@@ -51,7 +51,7 @@ class SQLiteGenerator(
         logger.debug { "Database schema verified/created" }
     }
 
-    override fun addReading(reading: MeterReading) {
+    override fun save(reading: MeterReading) {
         // Generate UUID for primary key
         val id = UUID.randomUUID().toString()
 
@@ -84,9 +84,9 @@ class SQLiteGenerator(
             flush()
             insertStatement.close()
             connection.close()
-            logger.info { "SQLiteGenerator closed. Total records: $totalInserted" }
+            logger.info { "SQLiteMeterReadingRepository closed. Total records: $totalInserted" }
         } catch (e: Exception) {
-            logger.error(e) { "Error closing SQLiteGenerator" }
+            logger.error(e) { "Error closing SQLiteMeterReadingRepository" }
             throw e
         }
     }

@@ -1,4 +1,4 @@
-package com.flo.nem12.parser
+package com.flo.nem12.model
 
 /**
  * Maintains parser state across NEM12 file processing

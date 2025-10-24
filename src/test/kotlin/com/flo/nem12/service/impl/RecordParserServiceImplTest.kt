@@ -1,4 +1,4 @@
-package com.flo.nem12.parser
+package com.flo.nem12.service.impl
 
 import com.flo.nem12.exception.ParseException
 import org.junit.jupiter.api.Test
@@ -8,9 +8,9 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class RecordParserTest {
+class RecordParserServiceImplTest {
 
-    private val parser = RecordParser()
+    private val parser = RecordParserServiceImpl()
 
     @Test
     fun `should parse 30-minute interval data correctly`() {

@@ -1,54 +1,71 @@
-package com.flo.nem12.parser
+package com.flo.nem12.service.impl
 
+import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.exception.ParseException
-import com.flo.nem12.generator.SQLGenerator
+import com.flo.nem12.model.MeterReading
 import com.flo.nem12.model.RecordType
+import com.flo.nem12.model.ParserState
+import com.flo.nem12.repository.MeterReadingRepository
+import com.flo.nem12.service.NEM12ParserService
+import com.flo.nem12.service.RecordParserService
 import com.flo.nem12.util.DateTimeValidator
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.nio.file.Path
 import kotlin.io.path.bufferedReader
+import kotlin.sequences.forEach
 
 private val logger = KotlinLogging.logger {}
 
 /**
- * Main NEM12 file parser using state machine pattern
+ * Service implementation for parsing NEM12 files
+ * Orchestrates the parsing process using RecordParserService and MeterReadingRepository
+ *
+ * Thread-safe: Each parseFile call maintains its own state
  */
-class NEM12Parser(private val sqlGenerator: SQLGenerator) {
-    private val recordParser = RecordParser()
-    private val state = ParserState()
+class NEM12ParserServiceImpl(
+    private val repository: MeterReadingRepository,
+    private val recordParserService: RecordParserService = RecordParserServiceImpl()
+) : NEM12ParserService {
 
     /**
-     * Parse NEM12 file and generate SQL output
+     * parseFile NEM12 file and generate SQL output
      *
-     * @param filePath Path to NEM12 input file
+     * @param cmd NEM12ParseCommand containing input/output paths and batch size
      * @throws ParseException if parsing fails
      */
-    fun parse(filePath: Path) {
-        logger.info { "Starting to parse file: $filePath" }
+    override fun parseFile(cmd: NEM12ParseCommand) {
+        logger.info { "Starting to parse file: ${cmd.inputPath}" }
 
-        filePath.bufferedReader().use { reader ->
-            reader.lineSequence().forEach { line ->
-                state.incrementLineNumber()
-                parseLine(line.trim())
+        val state = ParserState()
+
+        repository.use {
+            // Execute parsing
+            cmd.inputPath.bufferedReader().use { reader ->
+                reader.lineSequence().forEach { line ->
+                    state.incrementLineNumber()
+                    parseLine(line.trim(), repository, state)
+                }
             }
+
+            validateFileEnd(state)
+            repository.flush()
+
+            logger.info { "Successfully parsed ${state.lineNumber} lines" }
         }
-
-        validateFileEnd()
-        sqlGenerator.flush()
-
-        logger.info { "Successfully parsed ${state.lineNumber} lines" }
     }
 
-    private fun parseLine(line: String) {
+    private fun parseLine(line: String, repository: MeterReadingRepository, state: ParserState) {
         if (line.isEmpty()) return
         val recordType = RecordType.fromLine(line)
 
         when (recordType) {
-            RecordType.HEADER -> handleHeader(line)
-            RecordType.NMI_DATA -> handleNmiData(line)
-            RecordType.INTERVAL_DATA -> handleIntervalData(line)
-            RecordType.NMI_END -> handleNmiEnd()
-            RecordType.FILE_END -> handleFileEnd()
+            RecordType.HEADER -> handleHeader(line, state)
+            RecordType.NMI_DATA -> handleNmiData(line, state)
+            RecordType.INTERVAL_DATA -> {
+                val readings = getIntervalData(line, state)
+                readings.forEach { repository.save(it) }
+            }
+            RecordType.NMI_END -> handleNmiEnd(state)
+            RecordType.FILE_END -> handleFileEnd(state)
         }
     }
 
@@ -66,7 +83,7 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
      * 6. Must be exactly 5 fields
      * 7. Must be the first line in the file
      */
-    private fun handleHeader(line: String) {
+    private fun handleHeader(line: String, state: ParserState) {
         // Validation 1: Must be first line
         if (state.lineNumber != 1) {
             throw ParseException(state.lineNumber, "Header (100) must be the first line")
@@ -130,11 +147,11 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
 
         logger.info {
             "Valid header: version=$versionHeader, dateTime=$dateTime, " +
-            "from=$fromParticipant, to=$toParticipant"
+                    "from=$fromParticipant, to=$toParticipant"
         }
     }
 
-    private fun handleNmiData(line: String) {
+    private fun handleNmiData(line: String, state: ParserState) {
         val fields = line.split(",")
         if (fields.size < 9) {
             throw ParseException(state.lineNumber, "Invalid 200 record: insufficient fields")
@@ -147,20 +164,18 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
         logger.info { "Started NMI block: $nmi with interval $intervalMinutes minutes" }
     }
 
-    private fun handleIntervalData(line: String) {
+    private fun getIntervalData(line: String, state: ParserState): List<MeterReading> {
         if (!state.insideNmiBlock) {
             throw ParseException(state.lineNumber, "300 record found outside NMI block")
         }
 
         val nmi = state.currentNmi ?: throw ParseException(state.lineNumber, "No current NMI")
-        val readings = recordParser.parseIntervalData(line, nmi, state.intervalMinutes)
+        val readings = recordParserService.parseIntervalData(line, nmi, state.intervalMinutes)
 
-        readings.forEach { sqlGenerator.addReading(it) }
-
-        logger.debug { "Generated ${readings.size} readings from interval data" }
+        return readings
     }
 
-    private fun handleNmiEnd() {
+    private fun handleNmiEnd(state: ParserState) {
         if (!state.insideNmiBlock) {
             throw ParseException(state.lineNumber, "500 record found outside NMI block")
         }
@@ -169,11 +184,11 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
         state.endNmiBlock()
     }
 
-    private fun handleFileEnd() {
+    private fun handleFileEnd(state: ParserState) {
         logger.info { "Reached end of file at line ${state.lineNumber}" }
     }
 
-    private fun validateFileEnd() {
+    private fun validateFileEnd(state: ParserState) {
         if (state.insideNmiBlock) {
             throw ParseException(
                 state.lineNumber,

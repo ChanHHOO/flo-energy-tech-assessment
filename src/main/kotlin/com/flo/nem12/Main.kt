@@ -1,10 +1,11 @@
 package com.flo.nem12
 
+import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.exception.ParseException
-import com.flo.nem12.generator.GeneratorFactory
-import com.flo.nem12.generator.SQLGenerator
-import com.flo.nem12.parser.NEM12Parser
+import com.flo.nem12.repository.SQLiteMeterReadingRepository
+import com.flo.nem12.service.NEM12ParserService
+import com.flo.nem12.service.impl.NEM12ParserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -13,6 +14,12 @@ private val logger = KotlinLogging.logger {}
 
 /**
  * Main entry point for NEM12 parser CLI
+ * Acts as a Handler/Controller layer
+ *
+ * Architecture:
+ * - Handler: Main.kt (this file)
+ * - Service: NEM12ParserService
+ * - Repository: MeterReadingRepository
  *
  * Usage:
  *   java -jar nem12-parser.jar <input-file> <output-db> [--batch-size=1000]
@@ -34,15 +41,12 @@ fun main(args: Array<String>) {
         logger.info { "Input file: $inputPath" }
         logger.info { "Output database: $outputPath" }
         logger.info { "Batch size: $batchSize" }
+        val cmd = NEM12ParseCommand(batchSize, inputPath, outputPath)
 
-        // Create SQL generator using Factory Pattern
-        val generator: SQLGenerator = GeneratorFactory.createSQLiteGenerator(outputPath, batchSize)
-
-        // Parse file
-        generator.use { gen ->
-            val parser = NEM12Parser(gen)
-            parser.parse(inputPath)
-        }
+        // Create repository and inject into service
+        val repository = SQLiteMeterReadingRepository(outputPath, batchSize)
+        val service: NEM12ParserService = NEM12ParserServiceImpl(repository)
+        service.parseFile(cmd)
 
         logger.info { "Parsing completed successfully" }
         println("Database created: $outputPath")

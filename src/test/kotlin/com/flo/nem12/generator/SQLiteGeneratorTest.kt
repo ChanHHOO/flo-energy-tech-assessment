@@ -1,6 +1,7 @@
 package com.flo.nem12.generator
 
 import com.flo.nem12.model.MeterReading
+import com.flo.nem12.repository.SQLiteMeterReadingRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -36,8 +37,8 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteGenerator(dbPath, 10).use { generator ->
-            generator.addReading(reading)
+        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+            repository.save(reading)
         }
 
         // Then
@@ -59,8 +60,8 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteGenerator(dbPath, 10).use { generator ->
-            readings.forEach { generator.addReading(it) }
+        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+            readings.forEach { repository.save(it) }
         }
 
         // Then
@@ -86,8 +87,8 @@ class SQLiteGeneratorTest {
 
         // When
         // It will be store 10 rows because flush method will be not called.
-        val generator = SQLiteGenerator(dbPath, batchSize)
-        readings.forEach { generator.addReading(it) }
+        val repository = SQLiteMeterReadingRepository(dbPath, batchSize)
+        readings.forEach { repository.save(it) }
 
         // Then
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
@@ -113,9 +114,9 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteGenerator(dbPath, 10).use { generator ->
-            generator.addReading(reading1)
-            generator.addReading(reading2)
+        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+            repository.save(reading1)
+            repository.save(reading2)
         }
 
         // Then
@@ -141,8 +142,8 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteGenerator(dbPath, 10).use { generator ->
-            readings.forEach { generator.addReading(it) }
+        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+            readings.forEach { repository.save(it) }
         }
 
         // Then
