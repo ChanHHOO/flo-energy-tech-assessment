@@ -42,6 +42,12 @@ class RecordParser {
             }
 
             val consumption = BigDecimal(consumptionStr)
+
+            // Skip negative values
+            if (consumption < BigDecimal.ZERO) {
+                continue
+            }
+
             val timestamp = timestampCalculator.calculate(date, intervalMinutes, i)
 
             readings.add(MeterReading(nmi, timestamp, consumption))
