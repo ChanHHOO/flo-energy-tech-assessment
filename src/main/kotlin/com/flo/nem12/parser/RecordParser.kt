@@ -38,10 +38,10 @@ class RecordParser {
              * This validation logic is to cause Typecast to be called only once.
              * */
             val consumptionStr = fields[i + 2]
-            if(!isValidConsumptionStr(consumptionStr)) { continue }
+            if(!isValidConsumptionStr(consumptionStr)) continue
 
             val consumption = BigDecimal(consumptionStr)
-            if (!isValidConsumption(consumption)){ continue }
+            if (!isValidConsumption(consumption)) continue
 
             val timestamp = timestampCalculator.calculate(date, intervalMinutes, i)
 
@@ -53,13 +53,13 @@ class RecordParser {
 
     private fun isValidConsumptionStr(consumptionStr: String): Boolean{
         // Skip empty or non-numeric values
-        return !(consumptionStr.isBlank() || !consumptionStr.isNumeric())
+        return consumptionStr.isNotBlank() && consumptionStr.isNumeric()
     }
 
     private fun isValidConsumption(consumption: BigDecimal): Boolean {
         // 1. Skip negative values
         // 2. Validate consumption format (15.4: max 15 integer digits, max 4 decimal digits)
-        return !(consumption < BigDecimal.ZERO || !isValidConsumptionFormat(consumption))
+        return consumption >= BigDecimal.ZERO && isValidConsumptionFormat(consumption)
     }
 
     private fun parseDate(dateStr: String): LocalDate {
