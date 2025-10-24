@@ -15,6 +15,9 @@ dependencies {
     // Kotlin stdlib
     implementation(kotlin("stdlib"))
 
+    // Database
+    implementation("org.xerial:sqlite-jdbc:3.45.0.0")
+
     // Logging
     implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
     implementation("ch.qos.logback:logback-classic:1.4.11")
@@ -33,7 +36,7 @@ tasks.named<JavaExec>("run") {
     // Default arguments for development
     args = listOf(
         "src/test/resources/sample.nem12",
-        "output.sql"
+        "output.db"
     )
 }
 

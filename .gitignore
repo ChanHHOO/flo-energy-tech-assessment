@@ -34,4 +34,5 @@ bin/
 ### Generated Files ###
 *.log
 *.sql
+*.db
 *.nem12
