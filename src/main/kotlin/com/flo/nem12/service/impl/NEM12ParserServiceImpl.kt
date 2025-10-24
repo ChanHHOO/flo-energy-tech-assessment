@@ -1,52 +1,69 @@
-package com.flo.nem12.parser
+package com.flo.nem12.service.impl
 
+import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.exception.ParseException
-import com.flo.nem12.generator.SQLGenerator
+import com.flo.nem12.generator.GeneratorFactory
+import com.flo.nem12.model.MeterReading
 import com.flo.nem12.model.RecordType
+import com.flo.nem12.model.ParserState
+import com.flo.nem12.repository.MeterReadingRepository
+import com.flo.nem12.repository.SQLiteMeterReadingRepository
+import com.flo.nem12.service.NEM12ParserService
+import com.flo.nem12.service.RecordParserService
 import com.flo.nem12.util.DateTimeValidator
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.nio.file.Path
 import kotlin.io.path.bufferedReader
+import kotlin.sequences.forEach
 
 private val logger = KotlinLogging.logger {}
 
 /**
- * Main NEM12 file parser using state machine pattern
+ * Service implementation for parsing NEM12 files
+ * Orchestrates the parsing process using NEM12Parser and MeterReadingRepository
  */
-class NEM12Parser(private val sqlGenerator: SQLGenerator) {
-    private val recordParser = RecordParser()
+class NEM12ParserServiceImpl: NEM12ParserService {
+    private val recordParserService: RecordParserService = RecordParserServiceImpl()
     private val state = ParserState()
 
     /**
-     * Parse NEM12 file and generate SQL output
+     * parseFile NEM12 file and generate SQL output
      *
-     * @param filePath Path to NEM12 input file
+     * @param inputPath Path to NEM12 input file
+     * @param outputPath Path to NEM12 output file
+     * @param batchSize size for batch insert
      * @throws ParseException if parsing fails
      */
-    fun parse(filePath: Path) {
-        logger.info { "Starting to parse file: $filePath" }
+    override fun parseFile(cmd: NEM12ParseCommand) {
+        logger.info { "Starting to parse file: ${cmd.inputPath}" }
 
-        filePath.bufferedReader().use { reader ->
+        val generator = GeneratorFactory.createSQLiteGenerator(cmd.outputPath, cmd.batchSize)
+        val repository = SQLiteMeterReadingRepository(generator)
+
+        // Execute parsing
+        cmd.inputPath.bufferedReader().use { reader ->
             reader.lineSequence().forEach { line ->
                 state.incrementLineNumber()
-                parseLine(line.trim())
+                parseLine(line.trim(), repository)
             }
         }
 
         validateFileEnd()
-        sqlGenerator.flush()
+        generator.flush()
 
         logger.info { "Successfully parsed ${state.lineNumber} lines" }
     }
 
-    private fun parseLine(line: String) {
+    private fun parseLine(line: String, repository: MeterReadingRepository) {
         if (line.isEmpty()) return
         val recordType = RecordType.fromLine(line)
 
         when (recordType) {
             RecordType.HEADER -> handleHeader(line)
             RecordType.NMI_DATA -> handleNmiData(line)
-            RecordType.INTERVAL_DATA -> handleIntervalData(line)
+            RecordType.INTERVAL_DATA -> {
+                val readings = getIntervalData(line)
+                readings.forEach { repository.save(it) }
+            }
             RecordType.NMI_END -> handleNmiEnd()
             RecordType.FILE_END -> handleFileEnd()
         }
@@ -130,7 +147,7 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
 
         logger.info {
             "Valid header: version=$versionHeader, dateTime=$dateTime, " +
-            "from=$fromParticipant, to=$toParticipant"
+                    "from=$fromParticipant, to=$toParticipant"
         }
     }
 
@@ -147,17 +164,15 @@ class NEM12Parser(private val sqlGenerator: SQLGenerator) {
         logger.info { "Started NMI block: $nmi with interval $intervalMinutes minutes" }
     }
 
-    private fun handleIntervalData(line: String) {
+    private fun getIntervalData(line: String): List<MeterReading> {
         if (!state.insideNmiBlock) {
             throw ParseException(state.lineNumber, "300 record found outside NMI block")
         }
 
         val nmi = state.currentNmi ?: throw ParseException(state.lineNumber, "No current NMI")
-        val readings = recordParser.parseIntervalData(line, nmi, state.intervalMinutes)
+        val readings = recordParserService.parseIntervalData(line, nmi, state.intervalMinutes)
 
-        readings.forEach { sqlGenerator.addReading(it) }
-
-        logger.debug { "Generated ${readings.size} readings from interval data" }
+        return readings
     }
 
     private fun handleNmiEnd() {
