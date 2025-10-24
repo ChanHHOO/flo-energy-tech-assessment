@@ -13,13 +13,6 @@ interface MeterReadingRepository : Closeable {
     fun save(reading: MeterReading)
 
     /**
-     * Save multiple meter readings
-     */
-    fun saveAll(readings: List<MeterReading>) {
-        readings.forEach { save(it) }
-    }
-
-    /**
      * Flush any buffered data to persistent storage
      */
     fun flush()

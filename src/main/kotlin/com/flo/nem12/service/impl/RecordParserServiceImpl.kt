@@ -118,7 +118,7 @@ class RecordParserServiceImpl: RecordParserService {
      * - calculate(2005-03-01, 30, 1) → 2005-03-01T00:30:00
      * - calculate(2005-03-01, 30, 47) → 2005-03-01T23:30:00
      */
-    fun calculateIntervaTime(date: LocalDate, intervalMinutes: Int, index: Int): LocalDateTime {
+    private fun calculateIntervaTime(date: LocalDate, intervalMinutes: Int, index: Int): LocalDateTime {
         val totalMinutes = intervalMinutes * (index + 1)
         val hours = totalMinutes / 60
         val minutes = totalMinutes % 60
