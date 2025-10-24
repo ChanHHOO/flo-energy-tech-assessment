@@ -2,12 +2,10 @@ package com.flo.nem12.service.impl
 
 import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.exception.ParseException
-import com.flo.nem12.generator.GeneratorFactory
 import com.flo.nem12.model.MeterReading
 import com.flo.nem12.model.RecordType
 import com.flo.nem12.model.ParserState
 import com.flo.nem12.repository.MeterReadingRepository
-import com.flo.nem12.repository.SQLiteMeterReadingRepository
 import com.flo.nem12.service.NEM12ParserService
 import com.flo.nem12.service.RecordParserService
 import com.flo.nem12.util.DateTimeValidator
@@ -19,9 +17,11 @@ private val logger = KotlinLogging.logger {}
 
 /**
  * Service implementation for parsing NEM12 files
- * Orchestrates the parsing process using NEM12Parser and MeterReadingRepository
+ * Orchestrates the parsing process using RecordParserService and MeterReadingRepository
  */
-class NEM12ParserServiceImpl: NEM12ParserService {
+class NEM12ParserServiceImpl(
+    private val repository: MeterReadingRepository
+) : NEM12ParserService {
     private val recordParserService: RecordParserService = RecordParserServiceImpl()
     private val state = ParserState()
 
@@ -36,21 +36,20 @@ class NEM12ParserServiceImpl: NEM12ParserService {
     override fun parseFile(cmd: NEM12ParseCommand) {
         logger.info { "Starting to parse file: ${cmd.inputPath}" }
 
-        val generator = GeneratorFactory.createSQLiteGenerator(cmd.outputPath, cmd.batchSize)
-        val repository = SQLiteMeterReadingRepository(generator)
-
-        // Execute parsing
-        cmd.inputPath.bufferedReader().use { reader ->
-            reader.lineSequence().forEach { line ->
-                state.incrementLineNumber()
-                parseLine(line.trim(), repository)
+        repository.use {
+            // Execute parsing
+            cmd.inputPath.bufferedReader().use { reader ->
+                reader.lineSequence().forEach { line ->
+                    state.incrementLineNumber()
+                    parseLine(line.trim(), repository)
+                }
             }
+
+            validateFileEnd()
+            repository.flush()
+
+            logger.info { "Successfully parsed ${state.lineNumber} lines" }
         }
-
-        validateFileEnd()
-        generator.flush()
-
-        logger.info { "Successfully parsed ${state.lineNumber} lines" }
     }
 
     private fun parseLine(line: String, repository: MeterReadingRepository) {
