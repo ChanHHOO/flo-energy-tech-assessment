@@ -34,19 +34,14 @@ class RecordParser {
         val readings = mutableListOf<MeterReading>()
         val expectedIntervals = calculateExpectedIntervals(intervalMinutes)
         for (i in 0 until expectedIntervals) {
+            /**
+             * This validation logic is to cause Typecast to be called only once.
+             * */
             val consumptionStr = fields[i + 2]
-
-            // Skip empty or non-numeric values
-            if (consumptionStr.isBlank() || !consumptionStr.isNumeric()) {
-                continue
-            }
+            if(!isValidConsumptionStr(consumptionStr)) { continue }
 
             val consumption = BigDecimal(consumptionStr)
-
-            // Skip negative values
-            if (consumption < BigDecimal.ZERO) {
-                continue
-            }
+            if (!isValidConsumption(consumption)){ continue }
 
             val timestamp = timestampCalculator.calculate(date, intervalMinutes, i)
 
@@ -54,6 +49,17 @@ class RecordParser {
         }
 
         return readings
+    }
+
+    private fun isValidConsumptionStr(consumptionStr: String): Boolean{
+        // Skip empty or non-numeric values
+        return !(consumptionStr.isBlank() || !consumptionStr.isNumeric())
+    }
+
+    private fun isValidConsumption(consumption: BigDecimal): Boolean {
+        // 1. Skip negative values
+        // 2. Validate consumption format (15.4: max 15 integer digits, max 4 decimal digits)
+        return !(consumption < BigDecimal.ZERO || !isValidConsumptionFormat(consumption))
     }
 
     private fun parseDate(dateStr: String): LocalDate {
@@ -75,5 +81,24 @@ class RecordParser {
         } catch (e: NumberFormatException) {
             false
         }
+    }
+
+    /**
+     * Validate consumption format according to NEM12 specification
+     * Format: 15.4 (max 15 integer digits, max 4 decimal digits)
+     *
+     * @param consumption Consumption value to validate
+     * @return true if format is valid, false otherwise
+     */
+    private fun isValidConsumptionFormat(consumption: BigDecimal): Boolean {
+        val scale = consumption.scale()
+        val precision = consumption.precision()
+
+        if (scale > 4) {
+            return false
+        }
+
+        val integerDigits = precision - scale
+        return integerDigits <= 15
     }
 }

@@ -17,6 +17,7 @@ enum class RecordType(val code: Int) {
         }
 
         fun fromLine(line: String): RecordType {
+            // All the RecordIndicators are following type Numeric(3)
             require(line.length >= 3) { "Invalid line format" }
             val code = line.substring(0, 3).toInt()
             return fromCode(code)
