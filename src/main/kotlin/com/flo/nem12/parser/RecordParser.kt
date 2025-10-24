@@ -25,7 +25,11 @@ class RecordParser {
     fun parseIntervalData(line: String, nmi: String, intervalMinutes: Int): List<MeterReading> {
         val fields = line.split(",")
 
-        require(fields.size >= 3) { "Invalid 300 record: insufficient fields" }
+        /**
+         * The number of Mandatory Fields in Interval data record is 3
+         * RecordIndicator, IntervalDate, IntervalValue(at least one), QualityMethod
+         * */
+        require(fields.size >= 4) { "Invalid 300 record: insufficient fields" }
 
         // Parse date from field 1
         val date = parseDate(fields[1])
