@@ -10,9 +10,10 @@ enum class FailureReason {
     EMPTY_VALUE,
 
     /**
-     * The number of fields is grater then 3
+     * The number of fields is greater than 3
      * */
     INVALID_FIELDS,
+
     /**
      * Value is not numeric when a number is expected
      */

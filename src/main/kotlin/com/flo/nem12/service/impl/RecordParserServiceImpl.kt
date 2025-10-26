@@ -40,7 +40,6 @@ class RecordParserServiceImpl(
         // Parse date from field 1
         val date = parseDate(fields[1], nmi) ?: return emptyList()
 
-
         // Parse consumption values starting from field 2
         val readings = mutableListOf<MeterReading>()
         failureHandler.use {
@@ -148,7 +147,11 @@ class RecordParserServiceImpl(
         return true
     }
 
-    private fun validateFields(fields: List<String?>, expectedIntervals: Int, nmi: String) {
+    private fun validateFields(
+        fields: List<String?>,
+        expectedIntervals: Int,
+        nmi: String,
+    ) {
         val actualIntervals = fields.size - 7 // The number of record fields without interval values.
 
         if (actualIntervals != expectedIntervals) {
