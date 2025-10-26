@@ -8,7 +8,8 @@ enum class RecordType(val code: Int) {
     NMI_DATA(200),
     INTERVAL_DATA(300),
     NMI_END(500),
-    FILE_END(900);
+    FILE_END(900),
+    ;
 
     companion object {
         fun fromCode(code: Int): RecordType {

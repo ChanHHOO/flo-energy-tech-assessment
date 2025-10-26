@@ -4,7 +4,6 @@ package com.flo.nem12.config
  * Database configuration and schema definitions
  */
 object DatabaseConfig {
-
     /**
      * Default batch size for batch inserts
      */

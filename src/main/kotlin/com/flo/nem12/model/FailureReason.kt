@@ -32,5 +32,5 @@ enum class FailureReason {
     /**
      * Unknown or unclassified error
      */
-    UNKNOWN
+    UNKNOWN,
 }

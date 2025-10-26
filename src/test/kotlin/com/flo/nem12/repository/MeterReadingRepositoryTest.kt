@@ -13,7 +13,6 @@ import kotlin.io.path.deleteIfExists
 import kotlin.test.assertEquals
 
 class MeterReadingRepositoryTest {
-
     @TempDir
     lateinit var tempDir: Path
 
@@ -29,11 +28,12 @@ class MeterReadingRepositoryTest {
     fun `should insert single reading`() {
         // Given
         val dbPath = testDbPath
-        val reading = MeterReading(
-            nmi = "1234567890",
-            timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
-            consumption = BigDecimal("10.5")
-        )
+        val reading =
+            MeterReading(
+                nmi = "1234567890",
+                timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
+                consumption = BigDecimal("10.5"),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -42,8 +42,9 @@ class MeterReadingRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(1, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -52,11 +53,12 @@ class MeterReadingRepositoryTest {
     fun `should insert multiple readings`() {
         // Given
         val dbPath = testDbPath
-        val readings = listOf(
-            MeterReading("1234567890", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("10.5")),
-            MeterReading("1234567890", LocalDateTime.of(2024, 1, 1, 0, 30), BigDecimal("11.2")),
-            MeterReading("9876543210", LocalDateTime.of(2024, 1, 1, 1, 0), BigDecimal("15.7"))
-        )
+        val readings =
+            listOf(
+                MeterReading("1234567890", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("10.5")),
+                MeterReading("1234567890", LocalDateTime.of(2024, 1, 1, 0, 30), BigDecimal("11.2")),
+                MeterReading("9876543210", LocalDateTime.of(2024, 1, 1, 1, 0), BigDecimal("15.7")),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -66,8 +68,9 @@ class MeterReadingRepositoryTest {
 
         // Then
 
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(3, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -77,13 +80,14 @@ class MeterReadingRepositoryTest {
         // Given
         val dbPath = testDbPath
         val batchSize = 5
-        val readings = (0..11).map { i ->
-            MeterReading(
-                nmi = "1234567890",
-                timestamp = LocalDateTime.of(2024, 1, 1, 0, 0, 0).plusMinutes(i * 30L),
-                consumption = BigDecimal("10.$i")
-            )
-        }
+        val readings =
+            (0..11).map { i ->
+                MeterReading(
+                    nmi = "1234567890",
+                    timestamp = LocalDateTime.of(2024, 1, 1, 0, 0, 0).plusMinutes(i * 30L),
+                    consumption = BigDecimal("10.$i"),
+                )
+            }
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -92,8 +96,9 @@ class MeterReadingRepositoryTest {
         readings.forEach { repository.save(it) }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(10, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -102,16 +107,18 @@ class MeterReadingRepositoryTest {
     fun `should ignore duplicate readings with same nmi and timestamp`() {
         // Given
         val dbPath = testDbPath
-        val reading1 = MeterReading(
-            nmi = "1234567890",
-            timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
-            consumption = BigDecimal("10.5")
-        )
-        val reading2 = MeterReading(
-            nmi = "1234567890",
-            timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
-            consumption = BigDecimal("99.9")
-        )
+        val reading1 =
+            MeterReading(
+                nmi = "1234567890",
+                timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
+                consumption = BigDecimal("10.5"),
+            )
+        val reading2 =
+            MeterReading(
+                nmi = "1234567890",
+                timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
+                consumption = BigDecimal("99.9"),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -121,12 +128,14 @@ class MeterReadingRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(1, resultSet.getInt("cnt"))
 
-        val dataResult = connection.createStatement()
-            .executeQuery("SELECT consumption FROM meter_readings")
+        val dataResult =
+            connection.createStatement()
+                .executeQuery("SELECT consumption FROM meter_readings")
         assertEquals("10.5", dataResult.getBigDecimal("consumption").toPlainString())
         connection.close()
     }
@@ -135,11 +144,12 @@ class MeterReadingRepositoryTest {
     fun `should persist data with different NMIs`() {
         // Given
         val dbPath = testDbPath
-        val readings = listOf(
-            MeterReading("NMI_001", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("10.5")),
-            MeterReading("NMI_002", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("20.3")),
-            MeterReading("NMI_003", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("30.7"))
-        )
+        val readings =
+            listOf(
+                MeterReading("NMI_001", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("10.5")),
+                MeterReading("NMI_002", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("20.3")),
+                MeterReading("NMI_003", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("30.7")),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -148,8 +158,9 @@ class MeterReadingRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT DISTINCT nmi FROM meter_readings ORDER BY nmi")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT DISTINCT nmi FROM meter_readings ORDER BY nmi")
         val nmis = mutableListOf<String>()
         while (resultSet.next()) {
             nmis.add(resultSet.getString("nmi"))

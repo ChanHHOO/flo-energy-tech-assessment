@@ -4,7 +4,7 @@ import com.flo.nem12.model.FailureReason
 import com.flo.nem12.model.FailureRecord
 import java.io.Closeable
 
-interface FailureReadingsRepository: Closeable {
+interface FailureReadingsRepository : Closeable {
     /**
      * Save a single single failed reading
      */
