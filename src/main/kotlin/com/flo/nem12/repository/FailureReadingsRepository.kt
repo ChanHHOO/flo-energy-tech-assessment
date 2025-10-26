@@ -6,7 +6,7 @@ import java.io.Closeable
 
 interface FailureReadingsRepository: Closeable {
     /**
-     * Save a single meter reading
+     * Save a single single failed reading
      */
     fun save(failure: FailureRecord)
 

@@ -26,7 +26,7 @@ class FailureReadingsRepositoryImpl(
     private val statistics = mutableMapOf<FailureReason, Int>()
 
     init {
-        logger.info { "Initializing DatabaseFailureHandler at: $dbPath" }
+        logger.info { "Initializing FailureReadingsRepositoryImpl at: $dbPath" }
 
         // Connect to SQLite database
         connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
@@ -38,7 +38,7 @@ class FailureReadingsRepositoryImpl(
         // Prepare insert statement
         insertStatement = connection.prepareStatement(DatabaseConfig.INSERT_FAILED_READING_SQL)
 
-        logger.info { "DatabaseFailureHandler initialized successfully" }
+        logger.info { "FailureReadingsRepositoryImpl initialized successfully" }
     }
 
     private fun ensureSchema() {
@@ -96,9 +96,9 @@ class FailureReadingsRepositoryImpl(
             flush()
             insertStatement.close()
             connection.close()
-            logger.info { "DatabaseFailureHandler closed. Total failures recorded: ${statistics.values.sum()}" }
+            logger.info { "FailureReadingsRepositoryImpl closed. Total failures recorded: ${statistics.values.sum()}" }
         } catch (e: Exception) {
-            logger.error(e) { "Error closing DatabaseFailureHandler" }
+            logger.error(e) { "Error closing FailureReadingsRepositoryImpl" }
             throw e
         }
     }
