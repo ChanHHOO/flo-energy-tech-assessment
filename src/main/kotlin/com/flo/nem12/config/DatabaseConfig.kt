@@ -35,4 +35,27 @@ object DatabaseConfig {
      * Timestamp format used in database
      */
     const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
+
+    /**
+     * SQLite failed_readings table schema
+     */
+    const val CREATE_FAILED_READINGS_TABLE_SQL = """
+        CREATE TABLE IF NOT EXISTS failed_readings (
+            id TEXT PRIMARY KEY,
+            line_number INTEGER NOT NULL,
+            nmi TEXT,
+            interval_index INTEGER,
+            raw_value TEXT NOT NULL,
+            failure_reason TEXT NOT NULL,
+            timestamp TEXT NOT NULL
+        )
+    """
+
+    /**
+     * Insert statement for failed readings
+     */
+    const val INSERT_FAILED_READING_SQL = """
+        INSERT INTO failed_readings (id, line_number, nmi, interval_index, raw_value, failure_reason, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """
 }

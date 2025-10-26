@@ -8,18 +8,13 @@ import java.io.Closeable
  * Interface for handling parsing failures
  * Implementations can choose how to process failure records (e.g., database, logging, etc.)
  */
-interface FailureHandler : Closeable {
+interface FailureHandler {
     /**
      * Handle a single failure record
      *
      * @param failure The failure record to handle
      */
     fun handleFailure(failure: FailureRecord)
-
-    /**
-     * Flush any buffered failures to persistent storage
-     */
-    fun flush()
 
     /**
      * Get failure statistics grouped by reason
