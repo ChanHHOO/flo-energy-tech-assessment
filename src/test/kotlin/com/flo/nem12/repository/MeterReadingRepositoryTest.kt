@@ -1,7 +1,7 @@
-package com.flo.nem12.generator
+package com.flo.nem12.repository
 
 import com.flo.nem12.model.MeterReading
-import com.flo.nem12.repository.SQLiteMeterReadingRepository
+import com.flo.nem12.repository.impl.MeterReadingRepositoryImpl
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -11,9 +11,8 @@ import java.sql.DriverManager
 import java.time.LocalDateTime
 import kotlin.io.path.deleteIfExists
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
-class SQLiteGeneratorTest {
+class MeterReadingRepositoryTest {
 
     @TempDir
     lateinit var tempDir: Path
@@ -37,7 +36,7 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
             repository.save(reading)
         }
 
@@ -60,7 +59,7 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
             readings.forEach { repository.save(it) }
         }
 
@@ -87,7 +86,7 @@ class SQLiteGeneratorTest {
 
         // When
         // It will be store 10 rows because flush method will be not called.
-        val repository = SQLiteMeterReadingRepository(dbPath, batchSize)
+        val repository = MeterReadingRepositoryImpl(dbPath, batchSize)
         readings.forEach { repository.save(it) }
 
         // Then
@@ -114,7 +113,7 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
             repository.save(reading1)
             repository.save(reading2)
         }
@@ -142,7 +141,7 @@ class SQLiteGeneratorTest {
         )
 
         // When
-        SQLiteMeterReadingRepository(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
             readings.forEach { repository.save(it) }
         }
 

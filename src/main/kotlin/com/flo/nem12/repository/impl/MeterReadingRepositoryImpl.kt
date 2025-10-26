@@ -1,7 +1,8 @@
-package com.flo.nem12.repository
+package com.flo.nem12.repository.impl
 
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.model.MeterReading
+import com.flo.nem12.repository.MeterReadingRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Path
 import java.sql.Connection
@@ -13,10 +14,10 @@ import java.util.UUID
 private val logger = KotlinLogging.logger {}
 
 /**
- * SQLite implementation of MeterReadingRepository
+ * Implementation of MeterReadingRepository
  * Uses batch processing for optimal performance
  */
-class SQLiteMeterReadingRepository(
+class MeterReadingRepositoryImpl(
     private val dbPath: Path,
     private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE
 ) : MeterReadingRepository {
@@ -84,9 +85,9 @@ class SQLiteMeterReadingRepository(
             flush()
             insertStatement.close()
             connection.close()
-            logger.info { "SQLiteMeterReadingRepository closed. Total records: $totalInserted" }
+            logger.info { "MeterReadingRepository closed. Total records: $totalInserted" }
         } catch (e: Exception) {
-            logger.error(e) { "Error closing SQLiteMeterReadingRepository" }
+            logger.error(e) { "Error closing MeterReadingRepository" }
             throw e
         }
     }

@@ -3,7 +3,7 @@ package com.flo.nem12
 import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.exception.ParseException
-import com.flo.nem12.repository.SQLiteMeterReadingRepository
+import com.flo.nem12.repository.impl.MeterReadingRepositoryImpl
 import com.flo.nem12.service.NEM12ParserService
 import com.flo.nem12.service.impl.NEM12ParserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -44,7 +44,7 @@ fun main(args: Array<String>) {
         val cmd = NEM12ParseCommand(inputPath, outputPath)
 
         // Create repository and inject into service
-        val repository = SQLiteMeterReadingRepository(outputPath, batchSize)
+        val repository = MeterReadingRepositoryImpl(outputPath, batchSize)
         val service: NEM12ParserService = NEM12ParserServiceImpl(repository)
         service.parseFile(cmd)
 
