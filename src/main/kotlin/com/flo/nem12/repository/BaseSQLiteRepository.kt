@@ -5,8 +5,6 @@ import io.github.oshai.kotlinlogging.KLogger
 import java.io.Closeable
 import java.sql.Connection
 import java.sql.PreparedStatement
-import java.time.LocalDateTime
-import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
