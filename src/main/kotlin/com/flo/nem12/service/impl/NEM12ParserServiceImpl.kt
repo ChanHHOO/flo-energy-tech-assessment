@@ -45,7 +45,6 @@ class NEM12ParserServiceImpl(
                 }
             }
 
-            validateFileEnd(state)
             repository.flush()
 
             logger.info { "Successfully parsed ${state.lineNumber} lines" }
@@ -199,14 +198,5 @@ class NEM12ParserServiceImpl(
 
     private fun handleFileEnd(state: ParserState) {
         logger.info { "Reached end of file at line ${state.lineNumber}" }
-    }
-
-    private fun validateFileEnd(state: ParserState) {
-        if (state.insideNmiBlock) {
-            throw ParseException(
-                state.lineNumber,
-                "File ended without closing NMI block (missing 500 record)",
-            )
-        }
     }
 }
