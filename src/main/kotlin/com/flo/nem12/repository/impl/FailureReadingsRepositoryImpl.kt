@@ -5,6 +5,7 @@ import com.flo.nem12.model.FailureReason
 import com.flo.nem12.model.FailureRecord
 import com.flo.nem12.repository.BaseSQLiteRepository
 import com.flo.nem12.repository.FailureReadingsRepository
+import com.flo.nem12.util.DateTimeUtil.Companion.aestToUtc
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.sql.Connection

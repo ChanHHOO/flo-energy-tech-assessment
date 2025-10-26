@@ -23,18 +23,6 @@ abstract class BaseSQLiteRepository<T>(
     protected val timestampFormatter = DateTimeFormatter.ofPattern(DatabaseConfig.TIMESTAMP_FORMAT)
     protected var batchCount = 0
 
-    companion object {
-        private val AEST = ZoneId.of("Australia/Sydney")
-        private val UTC = ZoneId.of("UTC")
-
-        /**
-         * Convert AEST timestamp to UTC
-         */
-        fun aestToUtc(timestamp: LocalDateTime): LocalDateTime {
-            return timestamp.atZone(AEST).withZoneSameInstant(UTC).toLocalDateTime()
-        }
-    }
-
     init {
         getLogger().info { "Initializing ${this::class.simpleName}" }
 

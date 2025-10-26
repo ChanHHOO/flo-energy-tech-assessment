@@ -4,6 +4,7 @@ import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.model.MeterReading
 import com.flo.nem12.repository.BaseSQLiteRepository
 import com.flo.nem12.repository.MeterReadingRepository
+import com.flo.nem12.util.DateTimeUtil.Companion.aestToUtc
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.sql.Connection
