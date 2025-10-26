@@ -1,6 +1,8 @@
 package com.flo.nem12.service.impl
 
-import com.flo.nem12.exception.ParseException
+import com.flo.nem12.handler.FailureHandler
+import com.flo.nem12.model.FailureReason
+import com.flo.nem12.model.FailureRecord
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
@@ -10,7 +12,7 @@ import kotlin.test.assertTrue
 
 class RecordParserServiceImplTest {
 
-    private val parser = RecordParserServiceImpl()
+    private val parser = RecordParserServiceImpl(NoOpFailureHandler())
 
     @Test
     fun `should parse 30-minute interval data correctly`() {
@@ -176,17 +178,18 @@ class RecordParserServiceImplTest {
     }
 
     @Test
-    fun `should throw exception for invalid date format`() {
+    fun `should return empty list for invalid date format`() {
         // Given
         val intervals = (0 until 48).joinToString(",") { "10.5" }
         val line = "300,2024-01-01,$intervals,A,,20050301120000,,"
         val nmi = "1234567890"
         val intervalMinutes = 30
 
-        // When & Then
-        assertThrows<ParseException> {
-            parser.parseIntervalData(line, nmi, intervalMinutes)
-        }
+        // When
+        val readings = parser.parseIntervalData(line, nmi, intervalMinutes)
+
+        // Then - invalid date returns empty list when failureHandler is present
+        assertEquals(0, readings.size)
     }
 
     @Test
@@ -296,5 +299,22 @@ class RecordParserServiceImplTest {
         assertEquals(2, readings.size)
         assertEquals(BigDecimal("10.5"), readings[0].consumption)
         assertEquals(BigDecimal("20.1234"), readings[1].consumption)
+    }
+
+    /**
+     * No-op FailureHandler for tests that don't need failure tracking
+     */
+    private class NoOpFailureHandler : FailureHandler {
+        override fun handleFailure(failure: FailureRecord) {
+            // Do nothing
+        }
+
+        override fun getStatistics(): Map<FailureReason, Int> {
+            return emptyMap()
+        }
+
+        override fun close() {
+            // Do nothing
+        }
     }
 }

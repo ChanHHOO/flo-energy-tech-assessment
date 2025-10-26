@@ -1,6 +1,8 @@
 package com.flo.nem12.service.impl
 
-import com.flo.nem12.exception.ParseException
+import com.flo.nem12.handler.FailureHandler
+import com.flo.nem12.model.FailureReason
+import com.flo.nem12.model.FailureRecord
 import com.flo.nem12.model.MeterReading
 import com.flo.nem12.service.RecordParserService
 import java.math.BigDecimal
@@ -10,8 +12,11 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
-class RecordParserServiceImpl: RecordParserService {
+class RecordParserServiceImpl(
+    private val failureHandler: FailureHandler
+) : RecordParserService {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+    private var currentLineNumber: Int = 0
 
     /**
      * Parse 300 (interval data) record into list of MeterReading objects
@@ -31,45 +36,123 @@ class RecordParserServiceImpl: RecordParserService {
         require(fields.size >= 4) { "Invalid 300 record: insufficient fields" }
 
         // Parse date from field 1
-        val date = parseDate(fields[1])
+        val date = parseDate(fields[1], nmi) ?: return emptyList()
 
         // Parse consumption values starting from field 2
         val readings = mutableListOf<MeterReading>()
         val expectedIntervals = calculateExpectedIntervals(intervalMinutes)
-        for (i in 0 until expectedIntervals) {
-            /**
-             * This validation logic is to cause Typecast to be called only once.
-             * */
-            val consumptionStr = fields[i + 2]
-            if(!isValidConsumptionStr(consumptionStr)) continue
+        failureHandler.use {
+            for (i in 0 until expectedIntervals) {
+                val timestamp = calculateIntervaTime(date, intervalMinutes, i)
+                /**
+                 * This validation logic is to cause Typecast to be called only once.
+                 * */
+                val consumptionStr = fields[i + 2]
+                if(!isValidConsumptionStr(consumptionStr, nmi, i, timestamp)) continue
 
-            val consumption = BigDecimal(consumptionStr)
-            if (!isValidConsumption(consumption)) continue
+                val consumption = BigDecimal(consumptionStr)
+                if (!isValidConsumption(consumption, nmi, i, timestamp)) continue
 
-            val timestamp = calculateIntervaTime(date, intervalMinutes, i)
-
-            readings.add(MeterReading(nmi, timestamp, consumption))
+                readings.add(MeterReading(nmi, timestamp, consumption))
+            }
         }
-
         return readings
     }
 
-    private fun isValidConsumptionStr(consumptionStr: String): Boolean{
-        // Skip empty or non-numeric values
-        return consumptionStr.isNotBlank() && consumptionStr.isNumeric()
+    override fun setLineNumber(lineNumber: Int) {
+        this.currentLineNumber = lineNumber
     }
 
-    private fun isValidConsumption(consumption: BigDecimal): Boolean {
+    private fun isValidConsumptionStr(consumptionStr: String, nmi: String, intervalIndex: Int, timestamp: LocalDateTime): Boolean{
+        // Skip empty or non-numeric values
+
+        // Handle empty values
+        if (consumptionStr.isBlank()) {
+            failureHandler.handleFailure(
+                FailureRecord(
+                    lineNumber = currentLineNumber,
+                    reason = FailureReason.EMPTY_VALUE,
+                    nmi = nmi,
+                    intervalIndex = intervalIndex,
+                    rawValue = consumptionStr,
+                    timestamp = timestamp,
+                )
+            )
+            return false
+        }
+
+        // Handle non-numeric values
+        if (!consumptionStr.isNumeric()) {
+            failureHandler.handleFailure(
+                FailureRecord(
+                    lineNumber = currentLineNumber,
+                    reason = FailureReason.NON_NUMERIC_VALUE,
+                    nmi = nmi,
+                    intervalIndex = intervalIndex,
+                    rawValue = consumptionStr,
+                    timestamp = timestamp,
+                )
+            )
+            return false
+        }
+        return true
+    }
+
+    private fun isValidConsumption(consumption: BigDecimal, nmi: String, intervalIndex: Int, timestamp: LocalDateTime): Boolean {
         // 1. Skip negative values
         // 2. Validate consumption format (15.4: max 15 integer digits, max 4 decimal digits)
-        return consumption >= BigDecimal.ZERO && isValidConsumptionFormat(consumption)
+
+        // Handle negative values
+        if (consumption < BigDecimal.ZERO) {
+            failureHandler.handleFailure(
+                FailureRecord(
+                    lineNumber = currentLineNumber,
+                    reason = FailureReason.NEGATIVE_VALUE,
+                    nmi = nmi,
+                    intervalIndex = intervalIndex,
+                    rawValue = consumption.toString(),
+                    timestamp = timestamp,
+                )
+            )
+            return false
+        }
+
+        // Handle invalid decimal scale
+        if (!isValidConsumptionFormat(consumption)) {
+            failureHandler.handleFailure(
+                FailureRecord(
+                    lineNumber = currentLineNumber,
+                    reason = FailureReason.INVALID_CONSUMPTION_FORMAT,
+                    nmi = nmi,
+                    intervalIndex = intervalIndex,
+                    rawValue = consumption.toString(),
+                    timestamp = timestamp,
+                )
+            )
+            return false
+        }
+
+        return true
     }
 
-    private fun parseDate(dateStr: String): LocalDate {
+    private fun parseDate(dateStr: String, nmi: String): LocalDate? {
         return try {
             LocalDate.parse(dateStr, dateFormatter)
-        } catch (e: DateTimeParseException) {
-            throw ParseException(0, "Invalid date format: $dateStr (expected: yyyyMMdd)", e)
+        } catch (_: DateTimeParseException) {
+            /**
+             * If date is null, retry logic should refer line number field.
+             * Retry logic should try to save for all the interval data in line.
+             * */
+            failureHandler.handleFailure(
+                FailureRecord(
+                    lineNumber = currentLineNumber,
+                    reason = FailureReason.INVALID_DATE_FORMAT,
+                    nmi = nmi,
+                    intervalIndex = null,
+                    rawValue = dateStr,
+                )
+            )
+            return null
         }
     }
 
@@ -81,7 +164,7 @@ class RecordParserServiceImpl: RecordParserService {
         return try {
             BigDecimal(this)
             true
-        } catch (e: NumberFormatException) {
+        } catch (_: NumberFormatException) {
             false
         }
     }

@@ -47,7 +47,7 @@ object DatabaseConfig {
             interval_index INTEGER,
             raw_value TEXT NOT NULL,
             failure_reason TEXT NOT NULL,
-            timestamp TEXT NOT NULL
+            timestamp TIMESTAMP
         )
     """
 

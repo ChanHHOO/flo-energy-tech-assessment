@@ -5,9 +5,7 @@ import com.flo.nem12.model.FailureReason
 import com.flo.nem12.model.FailureRecord
 import com.flo.nem12.repository.FailureReadingsRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.nio.file.Path
 import java.sql.Connection
-import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -16,20 +14,18 @@ import kotlin.use
 private val logger = KotlinLogging.logger {}
 
 class FailureReadingsRepositoryImpl(
-    private val dbPath: Path,
+    private val connection: Connection,
     private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE
 ): FailureReadingsRepository {
-    private val connection: Connection
     private val insertStatement: PreparedStatement
     private val timestampFormatter = DateTimeFormatter.ofPattern(DatabaseConfig.TIMESTAMP_FORMAT)
     private var batchCount = 0
     private val statistics = mutableMapOf<FailureReason, Int>()
 
     init {
-        logger.info { "Initializing FailureReadingsRepositoryImpl at: $dbPath" }
+        logger.info { "Initializing FailureReadingsRepositoryImpl" }
 
         // Connect to SQLite database
-        connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
         connection.autoCommit = false
 
         // Create schema if not exists
@@ -64,7 +60,7 @@ class FailureReadingsRepositoryImpl(
         }
         insertStatement.setString(5, failure.rawValue)
         insertStatement.setString(6, failure.reason.name)
-        insertStatement.setString(7, failure.timestamp.format(timestampFormatter))
+        insertStatement.setString(7, failure.timestamp?.format(timestampFormatter))
 
         // Add to batch
         insertStatement.addBatch()
@@ -95,7 +91,6 @@ class FailureReadingsRepositoryImpl(
         try {
             flush()
             insertStatement.close()
-            connection.close()
             logger.info { "FailureReadingsRepositoryImpl closed. Total failures recorded: ${statistics.values.sum()}" }
         } catch (e: Exception) {
             logger.error(e) { "Error closing FailureReadingsRepositoryImpl" }

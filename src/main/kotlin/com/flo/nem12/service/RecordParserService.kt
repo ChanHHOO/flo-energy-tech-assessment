@@ -12,4 +12,11 @@ interface RecordParserService {
      * @return List of parsed meter readings
      */
     fun parseIntervalData(line: String, nmi: String, intervalMinutes: Int): List<MeterReading>
+
+    /**
+     * Set line number for tracking issued line
+     *
+     * @param lineNumber
+     */
+    fun setLineNumber(lineNumber: Int)
 }

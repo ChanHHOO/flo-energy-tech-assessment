@@ -18,5 +18,5 @@ data class FailureRecord(
     val intervalIndex: Int?,
     val rawValue: String,
     val reason: FailureReason,
-    val timestamp: LocalDateTime = LocalDateTime.now()
+    val timestamp: LocalDateTime? = null,
 )
