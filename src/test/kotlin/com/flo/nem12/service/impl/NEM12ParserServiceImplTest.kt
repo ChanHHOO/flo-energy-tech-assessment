@@ -32,7 +32,7 @@ class NEM12ParserServiceImplTest {
 
         val repository = TestMeterReadingRepository()
         val service = NEM12ParserServiceImpl(repository)
-        val cmd = NEM12ParseCommand(50, inputFile, tempDir.resolve("output.db"))
+        val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When
         service.parseFile(cmd)
@@ -55,7 +55,7 @@ class NEM12ParserServiceImplTest {
 
         val repository = TestMeterReadingRepository()
         val service = NEM12ParserServiceImpl(repository)
-        val cmd = NEM12ParseCommand(50, inputFile, tempDir.resolve("output.db"))
+        val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When & Then
         assertThrows<ParseException> {
@@ -77,7 +77,7 @@ class NEM12ParserServiceImplTest {
 
         val repository = TestMeterReadingRepository()
         val service = NEM12ParserServiceImpl(repository)
-        val cmd = NEM12ParseCommand(50, inputFile, tempDir.resolve("output.db"))
+        val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When & Then
         assertThrows<ParseException> {
@@ -98,7 +98,7 @@ class NEM12ParserServiceImplTest {
 
         val repository = TestMeterReadingRepository()
         val service = NEM12ParserServiceImpl(repository)
-        val cmd = NEM12ParseCommand(50, inputFile, tempDir.resolve("output.db"))
+        val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When & Then
         assertThrows<ParseException> {
