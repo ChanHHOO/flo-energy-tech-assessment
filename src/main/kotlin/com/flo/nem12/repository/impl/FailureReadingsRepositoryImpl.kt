@@ -3,114 +3,61 @@ package com.flo.nem12.repository.impl
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.model.FailureReason
 import com.flo.nem12.model.FailureRecord
+import com.flo.nem12.repository.BaseSQLiteRepository
 import com.flo.nem12.repository.FailureReadingsRepository
+import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.sql.Connection
 import java.sql.PreparedStatement
-import java.time.format.DateTimeFormatter
 import java.util.UUID
-import kotlin.use
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * Implementation of FailureReadingsRepository
+ * Uses batch processing for optimal performance
+ * Converts AEST timestamps to UTC before saving
+ */
 class FailureReadingsRepositoryImpl(
-    private val connection: Connection,
-    private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE,
-) : FailureReadingsRepository {
-    private val insertStatement: PreparedStatement
-    private val timestampFormatter = DateTimeFormatter.ofPattern(DatabaseConfig.TIMESTAMP_FORMAT)
-    private var batchCount = 0
+    connection: Connection,
+    batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE,
+) : BaseSQLiteRepository<FailureRecord>(connection, batchSize), FailureReadingsRepository {
     private val statistics = mutableMapOf<FailureReason, Int>()
 
-    init {
-        logger.info { "Initializing FailureReadingsRepositoryImpl" }
+    override fun getCreateTableSql(): String = DatabaseConfig.CREATE_FAILED_READINGS_TABLE_SQL
 
-        // Connect to SQLite database
-        connection.autoCommit = false
+    override fun getInsertSql(): String = DatabaseConfig.INSERT_FAILED_READING_SQL
 
-        // Create schema if not exists
-        ensureSchema()
-
-        // Prepare insert statement
-        insertStatement = connection.prepareStatement(DatabaseConfig.INSERT_FAILED_READING_SQL)
-
-        logger.info { "FailureReadingsRepositoryImpl initialized successfully" }
-    }
-
-    private fun ensureSchema() {
-        connection.createStatement().use { statement ->
-            statement.execute(DatabaseConfig.CREATE_FAILED_READINGS_TABLE_SQL)
-            connection.commit()
-        }
-        logger.debug { "Failed readings table schema verified/created" }
-    }
-
-    override fun save(failure: FailureRecord) {
+    override fun bindParameters(
+        statement: PreparedStatement,
+        entity: FailureRecord,
+    ) {
         // Generate UUID for primary key
         val id = UUID.randomUUID().toString()
 
         // Set prepared statement parameters
-        insertStatement.setString(1, id)
-        insertStatement.setInt(2, failure.lineNumber)
-        insertStatement.setString(3, failure.nmi)
-        if (failure.intervalIndex != null) {
-            insertStatement.setInt(4, failure.intervalIndex)
+        statement.setString(1, id)
+        statement.setInt(2, entity.lineNumber)
+        statement.setString(3, entity.nmi)
+        if (entity.intervalIndex != null) {
+            statement.setInt(4, entity.intervalIndex)
         } else {
-            insertStatement.setNull(4, java.sql.Types.INTEGER)
+            statement.setNull(4, java.sql.Types.INTEGER)
         }
-        insertStatement.setString(5, failure.rawValue)
-        insertStatement.setString(6, failure.reason.name)
-        insertStatement.setString(7, failure.timestamp?.format(timestampFormatter))
+        statement.setString(5, entity.rawValue)
+        statement.setString(6, entity.reason.name)
 
-        // Add to batch
-        insertStatement.addBatch()
-        batchCount++
+        // Convert AEST to UTC before saving (if timestamp is not null)
+        val utcTimestamp = entity.timestamp?.let { aestToUtc(it) }
+        statement.setString(7, utcTimestamp?.format(timestampFormatter))
 
         // Update statistics
-        statistics[failure.reason] = statistics.getOrDefault(failure.reason, 0) + 1
-
-        // Execute batch when batch size is reached
-        if (batchCount >= batchSize) {
-            executeBatch()
-        }
+        statistics[entity.reason] = statistics.getOrDefault(entity.reason, 0) + 1
     }
 
-    override fun flush() {
-        if (batchCount > 0) {
-            executeBatch()
-        }
-        connection.commit()
-        logger.info { "Flushed all pending failures. Total failures: ${statistics.values.sum()}" }
-    }
+    override fun getLogger(): KLogger = logger
 
     override fun getStatistics(): Map<FailureReason, Int> {
         return statistics.toMap()
-    }
-
-    override fun close() {
-        try {
-            flush()
-            insertStatement.close()
-            logger.info { "FailureReadingsRepositoryImpl closed. Total failures recorded: ${statistics.values.sum()}" }
-        } catch (e: Exception) {
-            logger.error(e) { "Error closing FailureReadingsRepositoryImpl" }
-            throw e
-        }
-    }
-
-    private fun executeBatch() {
-        try {
-            val results = insertStatement.executeBatch()
-            connection.commit()
-
-            val inserted = results.count { it > 0 }
-            logger.debug { "Batch executed: $inserted failure records inserted (batch size: $batchCount)" }
-
-            batchCount = 0
-        } catch (e: Exception) {
-            logger.error(e) { "Error executing batch, rolling back" }
-            connection.rollback()
-            throw e
-        }
     }
 }

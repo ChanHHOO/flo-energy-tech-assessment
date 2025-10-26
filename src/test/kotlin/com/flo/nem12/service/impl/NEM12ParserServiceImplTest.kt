@@ -1,18 +1,25 @@
 package com.flo.nem12.service.impl
 
 import com.flo.nem12.command.NEM12ParseCommand
+import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.exception.ParseException
 import com.flo.nem12.handler.DatabaseFailureHandler
 import com.flo.nem12.model.FailureReason
 import com.flo.nem12.model.FailureRecord
 import com.flo.nem12.model.MeterReading
+import com.flo.nem12.repository.BaseSQLiteRepository
 import com.flo.nem12.repository.FailureReadingsRepository
 import com.flo.nem12.repository.MeterReadingRepository
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.PreparedStatement
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -127,41 +134,75 @@ class NEM12ParserServiceImplTest {
 
     /**
      * Mock for MeterReadingRepository
+     * Provides simple in-memory implementation for testing
      */
-    private class TestMeterReadingRepository : MeterReadingRepository {
+    private class TestMeterReadingRepository :
+        BaseSQLiteRepository<MeterReading>(
+            createInMemoryConnection(),
+            batchSize = 100,
+        ),
+        MeterReadingRepository {
         val savedReadings = mutableListOf<MeterReading>()
         var flushed = false
         var closed = false
 
-        override fun save(reading: MeterReading) {
-            savedReadings.add(reading)
+        override fun getCreateTableSql(): String = DatabaseConfig.CREATE_TABLE_SQL
+
+        override fun getInsertSql(): String = DatabaseConfig.INSERT_SQL
+
+        override fun bindParameters(
+            statement: PreparedStatement,
+            entity: MeterReading,
+        ) {
+            // For testing, just track in memory instead of actual DB insert
+            savedReadings.add(entity)
         }
 
-        override fun flush() {
+        override fun getLogger(): KLogger = KotlinLogging.logger {}
+
+        override fun onFlushComplete() {
             flushed = true
         }
 
-        override fun close() {
+        override fun onCloseComplete() {
             closed = true
         }
     }
 
     /**
      * Mock for FailureReadingsRepository
+     * Provides simple in-memory implementation for testing
      */
-    private class TestFailureReadingsRepository : FailureReadingsRepository {
+    private class TestFailureReadingsRepository :
+        BaseSQLiteRepository<FailureRecord>(
+            createInMemoryConnection(),
+            batchSize = 100,
+        ),
+        FailureReadingsRepository {
         val savedFailures = mutableListOf<FailureRecord>()
 
-        override fun save(failure: FailureRecord) {
-            savedFailures.add(failure)
+        override fun getCreateTableSql(): String = DatabaseConfig.CREATE_FAILED_READINGS_TABLE_SQL
+
+        override fun getInsertSql(): String = DatabaseConfig.INSERT_FAILED_READING_SQL
+
+        override fun bindParameters(
+            statement: PreparedStatement,
+            entity: FailureRecord,
+        ) {
+            // For testing, just track in memory instead of actual DB insert
+            savedFailures.add(entity)
         }
 
-        override fun flush() {}
+        override fun getLogger(): KLogger = KotlinLogging.logger {}
 
         override fun getStatistics(): Map<FailureReason, Int> {
             return savedFailures.groupingBy { it.reason }.eachCount()
         }
+    }
 
-        override fun close() {}
+    companion object {
+        private fun createInMemoryConnection(): Connection {
+            return DriverManager.getConnection("jdbc:sqlite::memory:")
+        }
     }
 }
