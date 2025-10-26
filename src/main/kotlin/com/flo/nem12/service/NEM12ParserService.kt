@@ -1,7 +1,6 @@
 package com.flo.nem12.service
 
 import com.flo.nem12.command.NEM12ParseCommand
-import java.nio.file.Path
 
 /**
  * Service interface for parsing NEM12 files

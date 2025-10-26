@@ -10,5 +10,5 @@ import java.time.LocalDateTime
 data class MeterReading(
     val nmi: String,
     val timestamp: LocalDateTime,
-    val consumption: BigDecimal
+    val consumption: BigDecimal,
 )

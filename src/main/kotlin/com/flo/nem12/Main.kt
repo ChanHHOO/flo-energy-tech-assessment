@@ -39,10 +39,10 @@ fun main(args: Array<String>) {
     try {
         val inputPath = Paths.get(args[0])
 
-
         // Parse options
-        val batchSize = parseOption(args, "--batch-size")?.toInt()
-            ?: DatabaseConfig.DEFAULT_BATCH_SIZE
+        val batchSize =
+            parseOption(args, "--batch-size")?.toInt()
+                ?: DatabaseConfig.DEFAULT_BATCH_SIZE
 
         logger.info { "Starting NEM12 parser" }
         logger.info { "Input file: $inputPath" }
@@ -86,7 +86,10 @@ fun main(args: Array<String>) {
     }
 }
 
-private fun parseOption(args: Array<String>, optionName: String): String? {
+private fun parseOption(
+    args: Array<String>,
+    optionName: String,
+): String? {
     return args.find { it.startsWith("$optionName=") }
         ?.substringAfter("=")
 }

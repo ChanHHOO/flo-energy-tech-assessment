@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 class RecordParserServiceImpl(
-    private val failureHandler: FailureHandler
+    private val failureHandler: FailureHandler,
 ) : RecordParserService {
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
     private var currentLineNumber: Int = 0
@@ -26,7 +26,11 @@ class RecordParserServiceImpl(
      * @param intervalMinutes Interval duration in minutes
      * @return List of parsed meter readings
      */
-    override fun parseIntervalData(line: String, nmi: String, intervalMinutes: Int): List<MeterReading> {
+    override fun parseIntervalData(
+        line: String,
+        nmi: String,
+        intervalMinutes: Int,
+    ): List<MeterReading> {
         val fields = line.split(",")
 
         /**
@@ -44,11 +48,12 @@ class RecordParserServiceImpl(
         failureHandler.use {
             for (i in 0 until expectedIntervals) {
                 val timestamp = calculateIntervaTime(date, intervalMinutes, i)
+
                 /**
                  * This validation logic is to cause Typecast to be called only once.
                  * */
                 val consumptionStr = fields[i + 2]
-                if(!isValidConsumptionStr(consumptionStr, nmi, i, timestamp)) continue
+                if (!isValidConsumptionStr(consumptionStr, nmi, i, timestamp)) continue
 
                 val consumption = BigDecimal(consumptionStr)
                 if (!isValidConsumption(consumption, nmi, i, timestamp)) continue
@@ -63,7 +68,12 @@ class RecordParserServiceImpl(
         this.currentLineNumber = lineNumber
     }
 
-    private fun isValidConsumptionStr(consumptionStr: String, nmi: String, intervalIndex: Int, timestamp: LocalDateTime): Boolean{
+    private fun isValidConsumptionStr(
+        consumptionStr: String,
+        nmi: String,
+        intervalIndex: Int,
+        timestamp: LocalDateTime,
+    ): Boolean {
         // Skip empty or non-numeric values
 
         // Handle empty values
@@ -76,7 +86,7 @@ class RecordParserServiceImpl(
                     intervalIndex = intervalIndex,
                     rawValue = consumptionStr,
                     timestamp = timestamp,
-                )
+                ),
             )
             return false
         }
@@ -91,14 +101,19 @@ class RecordParserServiceImpl(
                     intervalIndex = intervalIndex,
                     rawValue = consumptionStr,
                     timestamp = timestamp,
-                )
+                ),
             )
             return false
         }
         return true
     }
 
-    private fun isValidConsumption(consumption: BigDecimal, nmi: String, intervalIndex: Int, timestamp: LocalDateTime): Boolean {
+    private fun isValidConsumption(
+        consumption: BigDecimal,
+        nmi: String,
+        intervalIndex: Int,
+        timestamp: LocalDateTime,
+    ): Boolean {
         // 1. Skip negative values
         // 2. Validate consumption format (15.4: max 15 integer digits, max 4 decimal digits)
 
@@ -112,7 +127,7 @@ class RecordParserServiceImpl(
                     intervalIndex = intervalIndex,
                     rawValue = consumption.toString(),
                     timestamp = timestamp,
-                )
+                ),
             )
             return false
         }
@@ -127,7 +142,7 @@ class RecordParserServiceImpl(
                     intervalIndex = intervalIndex,
                     rawValue = consumption.toString(),
                     timestamp = timestamp,
-                )
+                ),
             )
             return false
         }
@@ -135,7 +150,10 @@ class RecordParserServiceImpl(
         return true
     }
 
-    private fun parseDate(dateStr: String, nmi: String): LocalDate? {
+    private fun parseDate(
+        dateStr: String,
+        nmi: String,
+    ): LocalDate? {
         return try {
             LocalDate.parse(dateStr, dateFormatter)
         } catch (_: DateTimeParseException) {
@@ -150,14 +168,14 @@ class RecordParserServiceImpl(
                     nmi = nmi,
                     intervalIndex = null,
                     rawValue = dateStr,
-                )
+                ),
             )
             return null
         }
     }
 
     private fun calculateExpectedIntervals(intervalMinutes: Int): Int {
-        return 1440 / intervalMinutes  // 1 day = 1440 minutes
+        return 1440 / intervalMinutes // 1 day = 1440 minutes
     }
 
     private fun String.isNumeric(): Boolean {
@@ -201,7 +219,11 @@ class RecordParserServiceImpl(
      * - calculate(2005-03-01, 30, 1) → 2005-03-01T00:30:00
      * - calculate(2005-03-01, 30, 47) → 2005-03-01T23:30:00
      */
-    private fun calculateIntervaTime(date: LocalDate, intervalMinutes: Int, index: Int): LocalDateTime {
+    private fun calculateIntervaTime(
+        date: LocalDate,
+        intervalMinutes: Int,
+        index: Int,
+    ): LocalDateTime {
         val totalMinutes = intervalMinutes * (index + 1)
         val hours = totalMinutes / 60
         val minutes = totalMinutes % 60

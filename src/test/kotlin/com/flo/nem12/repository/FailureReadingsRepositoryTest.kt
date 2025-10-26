@@ -14,7 +14,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FailureReadingsRepositoryTest {
-
     @TempDir
     lateinit var tempDir: Path
 
@@ -30,14 +29,15 @@ class FailureReadingsRepositoryTest {
     fun `should insert single failure record`() {
         // Given
         val dbPath = testDbPath
-        val failure = FailureRecord(
-            lineNumber = 42,
-            nmi = "1234567890",
-            intervalIndex = 10,
-            rawValue = "-10.5",
-            reason = FailureReason.NEGATIVE_VALUE,
-            timestamp = LocalDateTime.of(2024, 1, 1, 12, 0)
-        )
+        val failure =
+            FailureRecord(
+                lineNumber = 42,
+                nmi = "1234567890",
+                intervalIndex = 10,
+                rawValue = "-10.5",
+                reason = FailureReason.NEGATIVE_VALUE,
+                timestamp = LocalDateTime.of(2024, 1, 1, 12, 0),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -46,8 +46,9 @@ class FailureReadingsRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
         assertEquals(1, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -56,11 +57,12 @@ class FailureReadingsRepositoryTest {
     fun `should insert multiple failure records`() {
         // Given
         val dbPath = testDbPath
-        val failures = listOf(
-            FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE, LocalDateTime.of(2024, 1, 1, 0, 0)),
-            FailureRecord(2, "NMI2", 1, "ABC", FailureReason.NON_NUMERIC_VALUE, LocalDateTime.of(2024, 1, 1, 0, 30)),
-            FailureRecord(3, "NMI3", 2, "-10.5", FailureReason.NEGATIVE_VALUE, LocalDateTime.of(2024, 1, 1, 1, 0))
-        )
+        val failures =
+            listOf(
+                FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE, LocalDateTime.of(2024, 1, 1, 0, 0)),
+                FailureRecord(2, "NMI2", 1, "ABC", FailureReason.NON_NUMERIC_VALUE, LocalDateTime.of(2024, 1, 1, 0, 30)),
+                FailureRecord(3, "NMI3", 2, "-10.5", FailureReason.NEGATIVE_VALUE, LocalDateTime.of(2024, 1, 1, 1, 0)),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -69,8 +71,9 @@ class FailureReadingsRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
         assertEquals(3, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -80,16 +83,17 @@ class FailureReadingsRepositoryTest {
         // Given
         val dbPath = testDbPath
         val batchSize = 5
-        val failures = (0..11).map { i ->
-            FailureRecord(
-                lineNumber = i,
-                nmi = "NMI_$i",
-                intervalIndex = i,
-                rawValue = "invalid_$i",
-                reason = FailureReason.EMPTY_VALUE,
-                timestamp = LocalDateTime.of(2024, 1, 1, 0, 0).plusMinutes(i * 30L)
-            )
-        }
+        val failures =
+            (0..11).map { i ->
+                FailureRecord(
+                    lineNumber = i,
+                    nmi = "NMI_$i",
+                    intervalIndex = i,
+                    rawValue = "invalid_$i",
+                    reason = FailureReason.EMPTY_VALUE,
+                    timestamp = LocalDateTime.of(2024, 1, 1, 0, 0).plusMinutes(i * 30L),
+                )
+            }
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -98,8 +102,9 @@ class FailureReadingsRepositoryTest {
         failures.forEach { repository.save(it) }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
         assertEquals(10, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -108,14 +113,15 @@ class FailureReadingsRepositoryTest {
     fun `should track statistics by failure reason`() {
         // Given
         val dbPath = testDbPath
-        val failures = listOf(
-            FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
-            FailureRecord(2, "NMI2", 0, "", FailureReason.EMPTY_VALUE),
-            FailureRecord(3, "NMI3", 0, "ABC", FailureReason.NON_NUMERIC_VALUE),
-            FailureRecord(4, "NMI4", 0, "-5", FailureReason.NEGATIVE_VALUE),
-            FailureRecord(5, "NMI5", 0, "-10", FailureReason.NEGATIVE_VALUE),
-            FailureRecord(6, "NMI6", 0, "-15", FailureReason.NEGATIVE_VALUE)
-        )
+        val failures =
+            listOf(
+                FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
+                FailureRecord(2, "NMI2", 0, "", FailureReason.EMPTY_VALUE),
+                FailureRecord(3, "NMI3", 0, "ABC", FailureReason.NON_NUMERIC_VALUE),
+                FailureRecord(4, "NMI4", 0, "-5", FailureReason.NEGATIVE_VALUE),
+                FailureRecord(5, "NMI5", 0, "-10", FailureReason.NEGATIVE_VALUE),
+                FailureRecord(6, "NMI6", 0, "-15", FailureReason.NEGATIVE_VALUE),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -135,13 +141,14 @@ class FailureReadingsRepositoryTest {
     fun `should persist data with different failure reasons`() {
         // Given
         val dbPath = testDbPath
-        val failures = listOf(
-            FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
-            FailureRecord(2, "NMI2", 1, "ABC", FailureReason.NON_NUMERIC_VALUE),
-            FailureRecord(3, "NMI3", 2, "-10.5", FailureReason.NEGATIVE_VALUE),
-            FailureRecord(4, "NMI4", 3, "123.12345", FailureReason.INVALID_CONSUMPTION_FORMAT),
-            FailureRecord(5, "NMI5", null, "2024-01-01", FailureReason.INVALID_DATE_FORMAT)
-        )
+        val failures =
+            listOf(
+                FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
+                FailureRecord(2, "NMI2", 1, "ABC", FailureReason.NON_NUMERIC_VALUE),
+                FailureRecord(3, "NMI3", 2, "-10.5", FailureReason.NEGATIVE_VALUE),
+                FailureRecord(4, "NMI4", 3, "123.12345", FailureReason.INVALID_CONSUMPTION_FORMAT),
+                FailureRecord(5, "NMI5", null, "2024-01-01", FailureReason.INVALID_DATE_FORMAT),
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -150,8 +157,9 @@ class FailureReadingsRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT DISTINCT failure_reason FROM failed_readings ORDER BY failure_reason")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT DISTINCT failure_reason FROM failed_readings ORDER BY failure_reason")
         val reasons = mutableListOf<String>()
         while (resultSet.next()) {
             reasons.add(resultSet.getString("failure_reason"))
@@ -162,9 +170,9 @@ class FailureReadingsRepositoryTest {
                 "INVALID_CONSUMPTION_FORMAT",
                 "INVALID_DATE_FORMAT",
                 "NEGATIVE_VALUE",
-                "NON_NUMERIC_VALUE"
+                "NON_NUMERIC_VALUE",
             ),
-            reasons
+            reasons,
         )
         connection.close()
     }
@@ -173,13 +181,14 @@ class FailureReadingsRepositoryTest {
     fun `should handle null interval index`() {
         // Given
         val dbPath = testDbPath
-        val failure = FailureRecord(
-            lineNumber = 1,
-            nmi = "NMI1",
-            intervalIndex = null,
-            rawValue = "2024-01-01",
-            reason = FailureReason.INVALID_DATE_FORMAT
-        )
+        val failure =
+            FailureRecord(
+                lineNumber = 1,
+                nmi = "NMI1",
+                intervalIndex = null,
+                rawValue = "2024-01-01",
+                reason = FailureReason.INVALID_DATE_FORMAT,
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -188,8 +197,9 @@ class FailureReadingsRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT interval_index FROM failed_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT interval_index FROM failed_readings")
         assertTrue(resultSet.next())
         assertEquals(0, resultSet.getInt("interval_index"))
         assertTrue(resultSet.wasNull()) // Check that it's actually NULL
@@ -200,14 +210,15 @@ class FailureReadingsRepositoryTest {
     fun `should handle null timestamp`() {
         // Given
         val dbPath = testDbPath
-        val failure = FailureRecord(
-            lineNumber = 1,
-            nmi = "NMI1",
-            intervalIndex = 0,
-            rawValue = "",
-            reason = FailureReason.EMPTY_VALUE,
-            timestamp = null
-        )
+        val failure =
+            FailureRecord(
+                lineNumber = 1,
+                nmi = "NMI1",
+                intervalIndex = 0,
+                rawValue = "",
+                reason = FailureReason.EMPTY_VALUE,
+                timestamp = null,
+            )
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -216,8 +227,9 @@ class FailureReadingsRepositoryTest {
         }
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT timestamp FROM failed_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT timestamp FROM failed_readings")
         assertTrue(resultSet.next())
         assertEquals(null, resultSet.getString("timestamp"))
         connection.close()
@@ -228,15 +240,16 @@ class FailureReadingsRepositoryTest {
         // Given
         val dbPath = testDbPath
         val batchSize = 10
-        val failures = (0..4).map { i -> // Only 5 records, less than batch size
-            FailureRecord(
-                lineNumber = i,
-                nmi = "NMI_$i",
-                intervalIndex = i,
-                rawValue = "invalid_$i",
-                reason = FailureReason.EMPTY_VALUE
-            )
-        }
+        val failures =
+            (0..4).map { i -> // Only 5 records, less than batch size
+                FailureRecord(
+                    lineNumber = i,
+                    nmi = "NMI_$i",
+                    intervalIndex = i,
+                    rawValue = "invalid_$i",
+                    reason = FailureReason.EMPTY_VALUE,
+                )
+            }
         val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
@@ -245,8 +258,9 @@ class FailureReadingsRepositoryTest {
         } // close() will flush remaining records
 
         // Then
-        val resultSet = connection.createStatement()
-            .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+        val resultSet =
+            connection.createStatement()
+                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
         assertEquals(5, resultSet.getInt("cnt"))
         connection.close()
     }

@@ -7,9 +7,12 @@ data class ParserState(
     var currentNmi: String? = null,
     var intervalMinutes: Int = 0,
     var insideNmiBlock: Boolean = false,
-    var lineNumber: Int = 0
+    var lineNumber: Int = 0,
 ) {
-    fun startNmiBlock(nmi: String, interval: Int) {
+    fun startNmiBlock(
+        nmi: String,
+        interval: Int,
+    ) {
         currentNmi = nmi
         intervalMinutes = interval
         insideNmiBlock = true

@@ -8,18 +8,18 @@ import java.time.LocalDateTime
 import kotlin.test.assertEquals
 
 class DatabaseFailureHandlerTest {
-
     @Test
     fun `should delegate handleFailure to repository`() {
         // Given
-        val failure = FailureRecord(
-            lineNumber = 42,
-            nmi = "1234567890",
-            intervalIndex = 10,
-            rawValue = "-10.5",
-            reason = FailureReason.NEGATIVE_VALUE,
-            timestamp = LocalDateTime.of(2024, 1, 1, 12, 0)
-        )
+        val failure =
+            FailureRecord(
+                lineNumber = 42,
+                nmi = "1234567890",
+                intervalIndex = 10,
+                rawValue = "-10.5",
+                reason = FailureReason.NEGATIVE_VALUE,
+                timestamp = LocalDateTime.of(2024, 1, 1, 12, 0),
+            )
         val repository = TestFailureReadingsRepository()
         val handler = DatabaseFailureHandler(repository)
 
@@ -34,11 +34,12 @@ class DatabaseFailureHandlerTest {
     @Test
     fun `should handle multiple failure records`() {
         // Given
-        val failures = listOf(
-            FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
-            FailureRecord(2, "NMI2", 1, "abc", FailureReason.NON_NUMERIC_VALUE),
-            FailureRecord(3, "NMI3", 2, "-5", FailureReason.NEGATIVE_VALUE)
-        )
+        val failures =
+            listOf(
+                FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
+                FailureRecord(2, "NMI2", 1, "abc", FailureReason.NON_NUMERIC_VALUE),
+                FailureRecord(3, "NMI3", 2, "-5", FailureReason.NEGATIVE_VALUE),
+            )
         val repository = TestFailureReadingsRepository()
         val handler = DatabaseFailureHandler(repository)
 
@@ -53,14 +54,15 @@ class DatabaseFailureHandlerTest {
     @Test
     fun `should delegate getStatistics to repository`() {
         // Given
-        val failures = listOf(
-            FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
-            FailureRecord(2, "NMI2", 0, "", FailureReason.EMPTY_VALUE),
-            FailureRecord(3, "NMI3", 0, "abc", FailureReason.NON_NUMERIC_VALUE),
-            FailureRecord(4, "NMI4", 0, "-5", FailureReason.NEGATIVE_VALUE),
-            FailureRecord(5, "NMI5", 0, "-10", FailureReason.NEGATIVE_VALUE),
-            FailureRecord(6, "NMI6", 0, "-15", FailureReason.NEGATIVE_VALUE)
-        )
+        val failures =
+            listOf(
+                FailureRecord(1, "NMI1", 0, "", FailureReason.EMPTY_VALUE),
+                FailureRecord(2, "NMI2", 0, "", FailureReason.EMPTY_VALUE),
+                FailureRecord(3, "NMI3", 0, "abc", FailureReason.NON_NUMERIC_VALUE),
+                FailureRecord(4, "NMI4", 0, "-5", FailureReason.NEGATIVE_VALUE),
+                FailureRecord(5, "NMI5", 0, "-10", FailureReason.NEGATIVE_VALUE),
+                FailureRecord(6, "NMI6", 0, "-15", FailureReason.NEGATIVE_VALUE),
+            )
         val repository = TestFailureReadingsRepository()
         val handler = DatabaseFailureHandler(repository)
 
@@ -77,15 +79,16 @@ class DatabaseFailureHandlerTest {
     @Test
     fun `should handle all failure reason types`() {
         // Given
-        val failures = FailureReason.entries.mapIndexed { index, reason ->
-            FailureRecord(
-                lineNumber = index,
-                nmi = "NMI$index",
-                intervalIndex = index,
-                rawValue = "value$index",
-                reason = reason
-            )
-        }
+        val failures =
+            FailureReason.entries.mapIndexed { index, reason ->
+                FailureRecord(
+                    lineNumber = index,
+                    nmi = "NMI$index",
+                    intervalIndex = index,
+                    rawValue = "value$index",
+                    reason = reason,
+                )
+            }
         val repository = TestFailureReadingsRepository()
         val handler = DatabaseFailureHandler(repository)
 

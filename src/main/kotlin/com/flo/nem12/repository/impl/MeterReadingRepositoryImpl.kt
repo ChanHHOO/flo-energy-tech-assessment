@@ -17,9 +17,8 @@ private val logger = KotlinLogging.logger {}
  */
 class MeterReadingRepositoryImpl(
     private val connection: Connection,
-    private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE
+    private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE,
 ) : MeterReadingRepository {
-
     private val insertStatement: PreparedStatement
     private val timestampFormatter = DateTimeFormatter.ofPattern(DatabaseConfig.TIMESTAMP_FORMAT)
     private var batchCount = 0

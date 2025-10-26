@@ -3,7 +3,7 @@ package com.flo.nem12.command
 import java.nio.file.Files
 import java.nio.file.Path
 
-data class NEM12ParseCommand (
+data class NEM12ParseCommand(
     val inputPath: Path,
     val outputPath: Path,
 ) {

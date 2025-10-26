@@ -11,7 +11,11 @@ interface RecordParserService {
      * @param intervalMinutes Interval duration in minutes
      * @return List of parsed meter readings
      */
-    fun parseIntervalData(line: String, nmi: String, intervalMinutes: Int): List<MeterReading>
+    fun parseIntervalData(
+        line: String,
+        nmi: String,
+        intervalMinutes: Int,
+    ): List<MeterReading>
 
     /**
      * Set line number for tracking issued line

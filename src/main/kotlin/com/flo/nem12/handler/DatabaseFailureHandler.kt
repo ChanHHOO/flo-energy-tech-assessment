@@ -9,7 +9,7 @@ import com.flo.nem12.repository.FailureReadingsRepository
  * Uses batch processing for optimal performance
  */
 class DatabaseFailureHandler(
-    private val repository: FailureReadingsRepository
+    private val repository: FailureReadingsRepository,
 ) : FailureHandler {
     override fun handleFailure(failure: FailureRecord) {
         repository.save(failure)

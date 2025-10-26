@@ -2,6 +2,7 @@ plugins {
     kotlin("jvm") version "2.0.21"
     application
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
 }
 
 group = "com.flo"
@@ -34,10 +35,11 @@ application {
 
 tasks.named<JavaExec>("run") {
     // Default arguments for development
-    args = listOf(
-        "src/test/resources/sample.nem12",
-        "output.db"
-    )
+    args =
+        listOf(
+            "src/test/resources/sample.nem12",
+            "output.db",
+        )
 }
 
 tasks.test {
@@ -55,5 +57,16 @@ tasks.shadowJar {
 
     manifest {
         attributes["Main-Class"] = "com.flo.nem12.MainKt"
+    }
+}
+
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    version.set("1.0.1")
+    android.set(false)
+    outputToConsole.set(true)
+    ignoreFailures.set(false)
+    filter {
+        exclude("**/generated/**")
+        include("**/kotlin/**")
     }
 }

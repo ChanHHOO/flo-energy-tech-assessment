@@ -15,8 +15,8 @@ private val logger = KotlinLogging.logger {}
 
 class FailureReadingsRepositoryImpl(
     private val connection: Connection,
-    private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE
-): FailureReadingsRepository {
+    private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE,
+) : FailureReadingsRepository {
     private val insertStatement: PreparedStatement
     private val timestampFormatter = DateTimeFormatter.ofPattern(DatabaseConfig.TIMESTAMP_FORMAT)
     private var batchCount = 0
