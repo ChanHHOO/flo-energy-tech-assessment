@@ -11,6 +11,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
+import kotlin.IllegalArgumentException
 
 class RecordParserServiceImpl(
     private val failureHandler: FailureHandler,
@@ -32,19 +33,16 @@ class RecordParserServiceImpl(
         intervalMinutes: Int,
     ): List<MeterReading> {
         val fields = line.split(",")
+        val expectedIntervals = calculateExpectedIntervals(intervalMinutes)
 
-        /**
-         * The number of Mandatory Fields in Interval data record is 3
-         * RecordIndicator, IntervalDate, IntervalValue(at least one), QualityMethod
-         * */
-        require(fields.size >= 4) { "Invalid 300 record: insufficient fields" }
+        validateFields(fields, expectedIntervals, nmi)
 
         // Parse date from field 1
         val date = parseDate(fields[1], nmi) ?: return emptyList()
 
+
         // Parse consumption values starting from field 2
         val readings = mutableListOf<MeterReading>()
-        val expectedIntervals = calculateExpectedIntervals(intervalMinutes)
         failureHandler.use {
             for (i in 0 until expectedIntervals) {
                 val timestamp = calculateIntervaTime(date, intervalMinutes, i)
@@ -148,6 +146,41 @@ class RecordParserServiceImpl(
         }
 
         return true
+    }
+
+    private fun validateFields(fields: List<String?>, expectedIntervals: Int, nmi: String) {
+        val actualIntervals = fields.size - 7 // The number of record fields without interval values.
+
+        if (actualIntervals != expectedIntervals) {
+            failureHandler.handleFailure(
+                FailureRecord(
+                    lineNumber = currentLineNumber,
+                    reason = FailureReason.INTERVAL_COUNT_MISMATCH,
+                    nmi = nmi,
+                    intervalIndex = null,
+                    rawValue = "Expected $expectedIntervals intervals but found $actualIntervals",
+                    timestamp = null,
+                ),
+            )
+            throw IllegalArgumentException("Expected $expectedIntervals intervals but found $actualIntervals")
+        }
+        /**
+         * The number of Mandatory Fields in Interval data record is 3
+         * RecordIndicator, IntervalDate, IntervalValue(at least one), QualityMethod
+         * */
+        if (fields.size < 4) {
+            failureHandler.handleFailure(
+                FailureRecord(
+                    lineNumber = currentLineNumber,
+                    reason = FailureReason.INVALID_FIELDS,
+                    nmi = nmi,
+                    intervalIndex = null,
+                    rawValue = "",
+                    timestamp = null,
+                ),
+            )
+            throw IllegalArgumentException("Line number must greater than 3")
+        }
     }
 
     private fun parseDate(

@@ -10,6 +10,10 @@ enum class FailureReason {
     EMPTY_VALUE,
 
     /**
+     * The number of fields is grater then 3
+     * */
+    INVALID_FIELDS,
+    /**
      * Value is not numeric when a number is expected
      */
     NON_NUMERIC_VALUE,
@@ -28,6 +32,11 @@ enum class FailureReason {
      * Date format does not match expected format (yyyyMMdd)
      */
     INVALID_DATE_FORMAT,
+
+    /**
+     * Number of intervals does not match expected count
+     */
+    INTERVAL_COUNT_MISMATCH,
 
     /**
      * Unknown or unclassified error

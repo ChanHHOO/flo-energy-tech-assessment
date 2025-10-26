@@ -18,12 +18,6 @@ data class ParserState(
         insideNmiBlock = true
     }
 
-    fun endNmiBlock() {
-        currentNmi = null
-        intervalMinutes = 0
-        insideNmiBlock = false
-    }
-
     fun incrementLineNumber() {
         lineNumber++
     }

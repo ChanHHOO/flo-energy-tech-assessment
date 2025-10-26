@@ -7,20 +7,21 @@ enum class RecordType(val code: Int) {
     HEADER(100),
     NMI_DATA(200),
     INTERVAL_DATA(300),
-    NMI_END(500),
+    INTERVAL_EVENT(400),
+    B2B_DETAIL(500),
     FILE_END(900),
     ;
 
     companion object {
         fun fromCode(code: Int): RecordType {
-            return values().find { it.code == code }
+            return RecordType.entries.find { it.code == code }
                 ?: throw IllegalArgumentException("Unknown record type: $code")
         }
 
         fun fromLine(line: String): RecordType {
             // All the RecordIndicators are following type Numeric(3)
             require(line.length >= 3) { "Invalid line format" }
-            val code = line.substring(0, 3).toInt()
+            val code = line.take(3).toInt()
             return fromCode(code)
         }
     }
