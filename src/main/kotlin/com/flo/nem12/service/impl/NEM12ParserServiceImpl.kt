@@ -66,8 +66,10 @@ class NEM12ParserServiceImpl(
                 val readings = getIntervalData(line, state)
                 readings.forEach { repository.save(it) }
             }
-            RecordType.NMI_END -> handleNmiEnd(state)
             RecordType.FILE_END -> handleFileEnd(state)
+            else -> {
+                // 400 and 500 Records are not required in this Assessment.
+            }
         }
     }
 
@@ -185,15 +187,6 @@ class NEM12ParserServiceImpl(
         val readings = recordParserService.parseIntervalData(line, nmi, state.intervalMinutes)
 
         return readings
-    }
-
-    private fun handleNmiEnd(state: ParserState) {
-        if (!state.insideNmiBlock) {
-            throw ParseException(state.lineNumber, "500 record found outside NMI block")
-        }
-
-        logger.debug { "Ending NMI block at line ${state.lineNumber}" }
-        state.endNmiBlock()
     }
 
     private fun handleFileEnd(state: ParserState) {
