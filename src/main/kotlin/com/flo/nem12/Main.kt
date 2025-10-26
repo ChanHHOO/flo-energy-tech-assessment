@@ -41,7 +41,7 @@ fun main(args: Array<String>) {
         logger.info { "Input file: $inputPath" }
         logger.info { "Output database: $outputPath" }
         logger.info { "Batch size: $batchSize" }
-        val cmd = NEM12ParseCommand(batchSize, inputPath, outputPath)
+        val cmd = NEM12ParseCommand(inputPath, outputPath)
 
         // Create repository and inject into service
         val repository = SQLiteMeterReadingRepository(outputPath, batchSize)
