@@ -3,7 +3,9 @@ package com.flo.nem12
 import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.exception.ParseException
+import com.flo.nem12.handler.CompositeFailureHandler
 import com.flo.nem12.handler.DatabaseFailureHandler
+import com.flo.nem12.handler.LoggingFailureHandler
 import com.flo.nem12.repository.impl.FailureReadingsRepositoryImpl
 import com.flo.nem12.repository.impl.MeterReadingRepositoryImpl
 import com.flo.nem12.service.NEM12ParserService
@@ -54,8 +56,11 @@ fun main(args: Array<String>) {
         val meterRepository = MeterReadingRepositoryImpl(connection, batchSize)
         val failureRepository = FailureReadingsRepositoryImpl(connection, batchSize)
 
-        // Create failure handler
-        val failureHandler = DatabaseFailureHandler(failureRepository)
+        // Create failure handlers
+        val databaseHandler = DatabaseFailureHandler(failureRepository)
+        val loggingHandler = LoggingFailureHandler()
+        val failureHandler = CompositeFailureHandler(databaseHandler, loggingHandler)
+
         val recordParserService = RecordParserServiceImpl(failureHandler)
 
         // Create service with dependencies
