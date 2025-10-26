@@ -54,10 +54,7 @@ class FailureRecordTest {
     }
 
     @Test
-    fun `should create FailureRecord with default timestamp`() {
-        // Given
-        val before = LocalDateTime.now()
-
+    fun `should create FailureRecord with null timestamp when not provided`() {
         // When
         val record = FailureRecord(
             lineNumber = 1,
@@ -67,27 +64,14 @@ class FailureRecordTest {
             reason = FailureReason.EMPTY_VALUE
         )
 
-        val after = LocalDateTime.now()
-
         // Then
-        assertNotNull(record.timestamp)
-        assert(record.timestamp.isAfter(before) || record.timestamp.isEqual(before))
-        assert(record.timestamp.isBefore(after) || record.timestamp.isEqual(after))
+        assertNull(record.timestamp)
     }
 
     @Test
     fun `should support all FailureReason types`() {
         // Given
-        val reasons = listOf(
-            FailureReason.EMPTY_VALUE,
-            FailureReason.NON_NUMERIC_VALUE,
-            FailureReason.NEGATIVE_VALUE,
-            FailureReason.INVALID_DECIMAL_SCALE,
-            FailureReason.INVALID_INTEGER_DIGITS,
-            FailureReason.INVALID_DATE_FORMAT,
-            FailureReason.INSUFFICIENT_FIELDS,
-            FailureReason.UNKNOWN
-        )
+        val reasons = FailureReason.entries
 
         // When & Then
         reasons.forEach { reason ->

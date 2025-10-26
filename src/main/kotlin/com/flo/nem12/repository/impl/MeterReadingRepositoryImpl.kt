@@ -4,9 +4,7 @@ import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.model.MeterReading
 import com.flo.nem12.repository.MeterReadingRepository
 import io.github.oshai.kotlinlogging.KotlinLogging
-import java.nio.file.Path
 import java.sql.Connection
-import java.sql.DriverManager
 import java.sql.PreparedStatement
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -18,21 +16,19 @@ private val logger = KotlinLogging.logger {}
  * Uses batch processing for optimal performance
  */
 class MeterReadingRepositoryImpl(
-    private val dbPath: Path,
+    private val connection: Connection,
     private val batchSize: Int = DatabaseConfig.DEFAULT_BATCH_SIZE
 ) : MeterReadingRepository {
 
-    private val connection: Connection
     private val insertStatement: PreparedStatement
     private val timestampFormatter = DateTimeFormatter.ofPattern(DatabaseConfig.TIMESTAMP_FORMAT)
     private var batchCount = 0
     private var totalInserted = 0
 
     init {
-        logger.info { "Initializing SQLite database at: $dbPath" }
+        logger.info { "Initializing SQLite database" }
 
         // Connect to SQLite database
-        connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
         connection.autoCommit = false // Use manual transactions for better performance
 
         // Create schema if not exists
@@ -84,7 +80,6 @@ class MeterReadingRepositoryImpl(
         try {
             flush()
             insertStatement.close()
-            connection.close()
             logger.info { "MeterReadingRepository closed. Total records: $totalInserted" }
         } catch (e: Exception) {
             logger.error(e) { "Error closing MeterReadingRepository" }

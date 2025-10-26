@@ -20,24 +20,14 @@ enum class FailureReason {
     NEGATIVE_VALUE,
 
     /**
-     * Decimal scale exceeds 4 digits (15.4 format violation)
+     * CONSUMPTION is follow 15.4
      */
-    INVALID_DECIMAL_SCALE,
-
-    /**
-     * Integer digits exceed 15 digits (15.4 format violation)
-     */
-    INVALID_INTEGER_DIGITS,
+    INVALID_CONSUMPTION_FORMAT,
 
     /**
      * Date format does not match expected format (yyyyMMdd)
      */
     INVALID_DATE_FORMAT,
-
-    /**
-     * Insufficient fields in record
-     */
-    INSUFFICIENT_FIELDS,
 
     /**
      * Unknown or unclassified error

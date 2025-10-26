@@ -8,7 +8,7 @@ import java.io.Closeable
  * Interface for handling parsing failures
  * Implementations can choose how to process failure records (e.g., database, logging, etc.)
  */
-interface FailureHandler {
+interface FailureHandler: Closeable {
     /**
      * Handle a single failure record
      *

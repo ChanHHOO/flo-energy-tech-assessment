@@ -3,11 +3,16 @@ package com.flo.nem12
 import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.config.DatabaseConfig
 import com.flo.nem12.exception.ParseException
+import com.flo.nem12.handler.DatabaseFailureHandler
+import com.flo.nem12.repository.impl.FailureReadingsRepositoryImpl
 import com.flo.nem12.repository.impl.MeterReadingRepositoryImpl
 import com.flo.nem12.service.NEM12ParserService
 import com.flo.nem12.service.impl.NEM12ParserServiceImpl
+import com.flo.nem12.service.impl.RecordParserServiceImpl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.nio.file.Paths
+import java.sql.DriverManager
+import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
@@ -28,10 +33,12 @@ fun main(args: Array<String>) {
     if (args.size < 2) {
         exitProcess(1)
     }
+    val outputPath = Paths.get(args[1]) ?: Path("output.db")
+    val connection = DriverManager.getConnection("jdbc:sqlite:$outputPath")
 
     try {
         val inputPath = Paths.get(args[0])
-        val outputPath = Paths.get(args[1])
+
 
         // Parse options
         val batchSize = parseOption(args, "--batch-size")?.toInt()
@@ -43,14 +50,29 @@ fun main(args: Array<String>) {
         logger.info { "Batch size: $batchSize" }
         val cmd = NEM12ParseCommand(inputPath, outputPath)
 
-        // Create repository and inject into service
-        val repository = MeterReadingRepositoryImpl(outputPath, batchSize)
-        val service: NEM12ParserService = NEM12ParserServiceImpl(repository)
+        // Create repositories
+        val meterRepository = MeterReadingRepositoryImpl(connection, batchSize)
+        val failureRepository = FailureReadingsRepositoryImpl(connection, batchSize)
+
+        // Create failure handler
+        val failureHandler = DatabaseFailureHandler(failureRepository)
+        val recordParserService = RecordParserServiceImpl(failureHandler)
+
+        // Create service with dependencies
+        val service: NEM12ParserService = NEM12ParserServiceImpl(meterRepository, recordParserService)
         service.parseFile(cmd)
 
+        // Print statistics
+        val stats = failureHandler.getStatistics()
         logger.info { "Parsing completed successfully" }
         println("Database created: $outputPath")
-
+        if (stats.isNotEmpty()) {
+            println("Failed records:")
+            stats.forEach { (reason, count) ->
+                println("  $reason: $count")
+            }
+            println("Failed records database: $outputPath")
+        }
     } catch (e: ParseException) {
         logger.error(e) { "Parse error: ${e.message}" }
         System.err.println("Parse error: ${e.message}")
@@ -59,6 +81,8 @@ fun main(args: Array<String>) {
         logger.error(e) { "Unexpected error: ${e.message}" }
         System.err.println("Error: ${e.message}")
         exitProcess(2)
+    } finally {
+        connection.close()
     }
 }
 

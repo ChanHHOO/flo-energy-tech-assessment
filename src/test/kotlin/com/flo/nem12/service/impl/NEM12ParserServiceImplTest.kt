@@ -2,7 +2,11 @@ package com.flo.nem12.service.impl
 
 import com.flo.nem12.command.NEM12ParseCommand
 import com.flo.nem12.exception.ParseException
+import com.flo.nem12.handler.DatabaseFailureHandler
+import com.flo.nem12.model.FailureReason
+import com.flo.nem12.model.FailureRecord
 import com.flo.nem12.model.MeterReading
+import com.flo.nem12.repository.FailureReadingsRepository
 import com.flo.nem12.repository.MeterReadingRepository
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -31,7 +35,10 @@ class NEM12ParserServiceImplTest {
         Files.writeString(inputFile, validContent)
 
         val repository = TestMeterReadingRepository()
-        val service = NEM12ParserServiceImpl(repository)
+        val failureRepository = TestFailureReadingsRepository()
+        val failureHandler = DatabaseFailureHandler(failureRepository)
+        val recordParserService = RecordParserServiceImpl(failureHandler)
+        val service = NEM12ParserServiceImpl(repository, recordParserService)
         val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When
@@ -54,7 +61,10 @@ class NEM12ParserServiceImplTest {
         Files.writeString(inputFile, invalidContent)
 
         val repository = TestMeterReadingRepository()
-        val service = NEM12ParserServiceImpl(repository)
+        val failureRepository = TestFailureReadingsRepository()
+        val failureHandler = DatabaseFailureHandler(failureRepository)
+        val recordParserService = RecordParserServiceImpl(failureHandler)
+        val service = NEM12ParserServiceImpl(repository, recordParserService)
         val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When & Then
@@ -76,7 +86,10 @@ class NEM12ParserServiceImplTest {
         Files.writeString(inputFile, invalidContent)
 
         val repository = TestMeterReadingRepository()
-        val service = NEM12ParserServiceImpl(repository)
+        val failureRepository = TestFailureReadingsRepository()
+        val failureHandler = DatabaseFailureHandler(failureRepository)
+        val recordParserService = RecordParserServiceImpl(failureHandler)
+        val service = NEM12ParserServiceImpl(repository, recordParserService)
         val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When & Then
@@ -97,7 +110,10 @@ class NEM12ParserServiceImplTest {
         Files.writeString(inputFile, invalidContent)
 
         val repository = TestMeterReadingRepository()
-        val service = NEM12ParserServiceImpl(repository)
+        val failureRepository = TestFailureReadingsRepository()
+        val failureHandler = DatabaseFailureHandler(failureRepository)
+        val recordParserService = RecordParserServiceImpl(failureHandler)
+        val service = NEM12ParserServiceImpl(repository, recordParserService)
         val cmd = NEM12ParseCommand(inputFile, tempDir.resolve("output.db"))
 
         // When & Then
@@ -125,5 +141,24 @@ class NEM12ParserServiceImplTest {
         override fun close() {
             closed = true
         }
+    }
+
+    /**
+     * Mock for FailureReadingsRepository
+     */
+    private class TestFailureReadingsRepository : FailureReadingsRepository {
+        val savedFailures = mutableListOf<FailureRecord>()
+
+        override fun save(failure: FailureRecord) {
+            savedFailures.add(failure)
+        }
+
+        override fun flush() {}
+
+        override fun getStatistics(): Map<FailureReason, Int> {
+            return savedFailures.groupingBy { it.reason }.eachCount()
+        }
+
+        override fun close() {}
     }
 }

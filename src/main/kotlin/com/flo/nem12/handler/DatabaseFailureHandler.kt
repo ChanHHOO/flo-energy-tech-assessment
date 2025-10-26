@@ -18,4 +18,8 @@ class DatabaseFailureHandler(
     override fun getStatistics(): Map<FailureReason, Int> {
         return repository.getStatistics()
     }
+
+    override fun close() {
+        repository.close()
+    }
 }

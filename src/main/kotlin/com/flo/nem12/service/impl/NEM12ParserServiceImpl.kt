@@ -23,7 +23,7 @@ private val logger = KotlinLogging.logger {}
  */
 class NEM12ParserServiceImpl(
     private val repository: MeterReadingRepository,
-    private val recordParserService: RecordParserService = RecordParserServiceImpl()
+    private val recordParserService: RecordParserService
 ) : NEM12ParserService {
 
     /**
@@ -170,6 +170,7 @@ class NEM12ParserServiceImpl(
         }
 
         val nmi = state.currentNmi ?: throw ParseException(state.lineNumber, "No current NMI")
+        recordParserService.setLineNumber(state.lineNumber)
         val readings = recordParserService.parseIntervalData(line, nmi, state.intervalMinutes)
 
         return readings

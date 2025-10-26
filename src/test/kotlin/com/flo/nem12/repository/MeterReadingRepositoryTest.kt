@@ -34,14 +34,14 @@ class MeterReadingRepositoryTest {
             timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
             consumption = BigDecimal("10.5")
         )
+        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
-        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(connection, 10).use { repository ->
             repository.save(reading)
         }
 
         // Then
-        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
         val resultSet = connection.createStatement()
             .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(1, resultSet.getInt("cnt"))
@@ -57,14 +57,15 @@ class MeterReadingRepositoryTest {
             MeterReading("1234567890", LocalDateTime.of(2024, 1, 1, 0, 30), BigDecimal("11.2")),
             MeterReading("9876543210", LocalDateTime.of(2024, 1, 1, 1, 0), BigDecimal("15.7"))
         )
+        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
-        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(connection, 10).use { repository ->
             readings.forEach { repository.save(it) }
         }
 
         // Then
-        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
+
         val resultSet = connection.createStatement()
             .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(3, resultSet.getInt("cnt"))
@@ -83,14 +84,14 @@ class MeterReadingRepositoryTest {
                 consumption = BigDecimal("10.$i")
             )
         }
+        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
         // It will be store 10 rows because flush method will be not called.
-        val repository = MeterReadingRepositoryImpl(dbPath, batchSize)
+        val repository = MeterReadingRepositoryImpl(connection, batchSize)
         readings.forEach { repository.save(it) }
 
         // Then
-        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
         val resultSet = connection.createStatement()
             .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(10, resultSet.getInt("cnt"))
@@ -111,15 +112,15 @@ class MeterReadingRepositoryTest {
             timestamp = LocalDateTime.of(2024, 1, 1, 0, 0),
             consumption = BigDecimal("99.9")
         )
+        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
-        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(connection, 10).use { repository ->
             repository.save(reading1)
             repository.save(reading2)
         }
 
         // Then
-        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
         val resultSet = connection.createStatement()
             .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
         assertEquals(1, resultSet.getInt("cnt"))
@@ -139,14 +140,14 @@ class MeterReadingRepositoryTest {
             MeterReading("NMI_002", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("20.3")),
             MeterReading("NMI_003", LocalDateTime.of(2024, 1, 1, 0, 0), BigDecimal("30.7"))
         )
+        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
 
         // When
-        MeterReadingRepositoryImpl(dbPath, 10).use { repository ->
+        MeterReadingRepositoryImpl(connection, 10).use { repository ->
             readings.forEach { repository.save(it) }
         }
 
         // Then
-        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
         val resultSet = connection.createStatement()
             .executeQuery("SELECT DISTINCT nmi FROM meter_readings ORDER BY nmi")
         val nmis = mutableListOf<String>()
