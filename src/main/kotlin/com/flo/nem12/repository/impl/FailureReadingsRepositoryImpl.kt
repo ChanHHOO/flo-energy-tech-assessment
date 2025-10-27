@@ -52,6 +52,9 @@ class FailureReadingsRepositoryImpl(
         val utcTimestamp = entity.timestamp?.let { aestToUtc(it) }
         statement.setString(7, utcTimestamp?.format(timestampFormatter))
 
+        // Set is_processed to false (will be managed by separate failure processing system)
+        statement.setBoolean(8, false)
+
         // Update statistics
         statistics[entity.reason] = statistics.getOrDefault(entity.reason, 0) + 1
     }
