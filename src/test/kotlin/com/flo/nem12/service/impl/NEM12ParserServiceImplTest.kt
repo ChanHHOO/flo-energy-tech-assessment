@@ -155,7 +155,7 @@ class NEM12ParserServiceImplTest {
         FailureReadingsRepository {
         val savedFailures = mutableListOf<FailureRecord>()
 
-        override fun getCreateTableSql(): String = DatabaseConfig.CREATE_FAILED_READINGS_TABLE_SQL
+        override fun getCreateTableSql(): String = DatabaseConfig.CREATE_FAILED_READING_TABLE_SQL
 
         override fun getInsertSql(): String = DatabaseConfig.INSERT_FAILED_READING_SQL
 

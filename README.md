@@ -1,6 +1,6 @@
 # NEM12 Parser
 
-A Kotlin-based parser for NEM12 format energy meter reading files, generating SQL INSERT statements for the `meter_readings` database table.
+A Kotlin-based parser for NEM12 format energy meter reading files, generating SQL INSERT statements for the `meter_reading` database table.
 
 ## Features
 
@@ -114,13 +114,13 @@ class BatchInsertGenerator(outputPath: Path, batchSize: Int) : SQLGenerator
 ## Database Schema
 
 ```sql
-create table meter_readings (
+create table meter_reading (
     id uuid default gen_random_uuid() not null,
     nmi varchar(10) not null,
     timestamp timestamp not null,
     consumption numeric not null,
-    constraint meter_readings_pk primary key (id),
-    constraint meter_readings_unique_consumption unique (nmi, timestamp)
+    constraint meter_reading_pk primary key (id),
+    constraint meter_reading_unique_consumption unique (nmi, timestamp)
 );
 ```
 
@@ -144,7 +144,7 @@ create table meter_readings (
 
 **Output (PostgreSQL COPY):**
 ```sql
-COPY meter_readings (nmi, timestamp, consumption) FROM STDIN WITH (FORMAT CSV);
+COPY meter_reading (nmi, timestamp, consumption) FROM STDIN WITH (FORMAT CSV);
 NEM1201009,2005-03-01 00:00:00,0.461
 NEM1201009,2005-03-01 00:30:00,0.810
 \.

@@ -26,7 +26,7 @@ object DatabaseConfig {
 
     const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
 
-    const val CREATE_FAILED_READINGS_TABLE_SQL = """
+    const val CREATE_FAILED_READING_TABLE_SQL = """
         CREATE TABLE IF NOT EXISTS failure_reading (
             id TEXT PRIMARY KEY,
             line_number INTEGER NOT NULL,
