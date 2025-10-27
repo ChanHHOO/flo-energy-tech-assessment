@@ -5,7 +5,7 @@ import java.time.LocalDateTime
 
 /**
  * Represents a single meter reading record
- * Corresponds to the meter_readings table in the database
+ * Corresponds to the meter_reading table in the database
  */
 data class MeterReading(
     val nmi: String,
