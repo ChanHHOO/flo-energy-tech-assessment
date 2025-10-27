@@ -31,7 +31,6 @@ A production-grade Kotlin-based parser for NEM12 format energy meter reading fil
 **Development Dependencies:**
 - **Gradle**: Build automation tool
 - **JUnit**: Testing framework
-- **Kotest**: Kotlin-specific assertions
 - **Ktlint**: Kotlin code style checker and formatter
 
 ### 1-3. How to Run
