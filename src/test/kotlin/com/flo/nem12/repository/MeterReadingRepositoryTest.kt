@@ -44,7 +44,7 @@ class MeterReadingRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_reading")
         assertEquals(1, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -70,7 +70,7 @@ class MeterReadingRepositoryTest {
 
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_reading")
         assertEquals(3, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -98,7 +98,7 @@ class MeterReadingRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_reading")
         assertEquals(10, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -130,12 +130,12 @@ class MeterReadingRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM meter_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM meter_reading")
         assertEquals(1, resultSet.getInt("cnt"))
 
         val dataResult =
             connection.createStatement()
-                .executeQuery("SELECT consumption FROM meter_readings")
+                .executeQuery("SELECT consumption FROM meter_reading")
         assertEquals("10.5", dataResult.getBigDecimal("consumption").toPlainString())
         connection.close()
     }
@@ -160,7 +160,7 @@ class MeterReadingRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT DISTINCT nmi FROM meter_readings ORDER BY nmi")
+                .executeQuery("SELECT DISTINCT nmi FROM meter_reading ORDER BY nmi")
         val nmis = mutableListOf<String>()
         while (resultSet.next()) {
             nmis.add(resultSet.getString("nmi"))

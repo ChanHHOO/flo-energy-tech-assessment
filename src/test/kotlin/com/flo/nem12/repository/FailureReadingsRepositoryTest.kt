@@ -48,7 +48,7 @@ class FailureReadingsRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM failure_reading")
         assertEquals(1, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -73,7 +73,7 @@ class FailureReadingsRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM failure_reading")
         assertEquals(3, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -104,7 +104,7 @@ class FailureReadingsRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM failure_reading")
         assertEquals(10, resultSet.getInt("cnt"))
         connection.close()
     }
@@ -159,7 +159,7 @@ class FailureReadingsRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT DISTINCT failure_reason FROM failed_readings ORDER BY failure_reason")
+                .executeQuery("SELECT DISTINCT failure_reason FROM failure_reading ORDER BY failure_reason")
         val reasons = mutableListOf<String>()
         while (resultSet.next()) {
             reasons.add(resultSet.getString("failure_reason"))
@@ -199,7 +199,7 @@ class FailureReadingsRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT interval_index FROM failed_readings")
+                .executeQuery("SELECT interval_index FROM failure_reading")
         assertTrue(resultSet.next())
         assertEquals(0, resultSet.getInt("interval_index"))
         assertTrue(resultSet.wasNull()) // Check that it's actually NULL
@@ -229,7 +229,7 @@ class FailureReadingsRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT timestamp FROM failed_readings")
+                .executeQuery("SELECT timestamp FROM failure_reading")
         assertTrue(resultSet.next())
         assertEquals(null, resultSet.getString("timestamp"))
         connection.close()
@@ -260,7 +260,7 @@ class FailureReadingsRepositoryTest {
         // Then
         val resultSet =
             connection.createStatement()
-                .executeQuery("SELECT COUNT(*) as cnt FROM failed_readings")
+                .executeQuery("SELECT COUNT(*) as cnt FROM failure_reading")
         assertEquals(5, resultSet.getInt("cnt"))
         connection.close()
     }
