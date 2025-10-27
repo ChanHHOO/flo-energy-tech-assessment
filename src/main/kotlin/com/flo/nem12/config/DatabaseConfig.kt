@@ -30,16 +30,17 @@ object DatabaseConfig {
         CREATE TABLE IF NOT EXISTS failure_reading (
             id TEXT PRIMARY KEY,
             line_number INTEGER NOT NULL,
-            nmi TEXT, 
+            nmi TEXT,
             interval_index INTEGER,
             raw_value TEXT NOT NULL,
             failure_reason TEXT NOT NULL,
-            timestamp TIMESTAMP
+            timestamp TIMESTAMP,
+            is_processed BOOLEAN NOT NULL DEFAULT 0
         )
     """
 
     const val INSERT_FAILED_READING_SQL = """
-        INSERT INTO failure_reading (id, line_number, nmi, interval_index, raw_value, failure_reason, timestamp)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO failure_reading (id, line_number, nmi, interval_index, raw_value, failure_reason, timestamp, is_processed)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """
 }

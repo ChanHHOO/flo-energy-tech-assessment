@@ -11,6 +11,7 @@ import java.sql.DriverManager
 import java.time.LocalDateTime
 import kotlin.io.path.deleteIfExists
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FailureReadingsRepositoryTest {
@@ -262,6 +263,33 @@ class FailureReadingsRepositoryTest {
             connection.createStatement()
                 .executeQuery("SELECT COUNT(*) as cnt FROM failure_reading")
         assertEquals(5, resultSet.getInt("cnt"))
+        connection.close()
+    }
+
+    @Test
+    fun `should insert failure record with is_processed set to false`() {
+        // Given
+        val dbPath = testDbPath
+        val failure = FailureRecord(
+            lineNumber = 1,
+            nmi = "1234567890",
+            intervalIndex = 0,
+            rawValue = "invalid",
+            reason = FailureReason.EMPTY_VALUE,
+            timestamp = LocalDateTime.of(2024, 1, 1, 0, 0)
+        )
+        val connection = DriverManager.getConnection("jdbc:sqlite:$dbPath")
+
+        // When
+        FailureReadingsRepositoryImpl(connection, 10).use { repository ->
+            repository.save(failure)
+        }
+
+        // Then
+        val resultSet = connection.createStatement()
+            .executeQuery("SELECT is_processed FROM failure_reading")
+        assertTrue(resultSet.next())
+        assertFalse(resultSet.getBoolean("is_processed"))
         connection.close()
     }
 }
