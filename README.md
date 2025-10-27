@@ -1,274 +1,410 @@
 # NEM12 Parser
 
-A Kotlin-based parser for NEM12 format energy meter reading files, generating SQL INSERT statements for the `meter_reading` database table.
+## 1. Overview
 
-## Features
+### 1-1. Project Overview
 
-- **Streaming Processing**: Handles very large files efficiently with constant memory usage
-- **State Machine Pattern**: Robust parsing of hierarchical NEM12 file structure
-- **Multiple Output Modes**:
-  - PostgreSQL COPY (fastest, recommended)
-  - Batch INSERT (standard SQL, compatible)
-- **Production-Grade**: Error handling, logging, validation
-- **Written in Kotlin**: Concise, type-safe, modern
+A production-grade Kotlin-based parser for NEM12 format energy meter reading files. The parser reads NEM12 files, validates their contents, and stores meter readings and parsing failures in a database.
 
-## Quick Start
+**Key Features:**
+- **Best-Effort Parsing**: Continues processing even when individual records fail validation
+- **Dual Failure Handling**: Saves failures to database AND logs them to console in real-time
+- **Batch Processing**: Optimized batch inserts for high performance
+- **Timezone Conversion**: Automatically converts AEST/AEDT timestamps to UTC
+- **Test code**: Wrote test code for server stability.
 
-### Prerequisites
+**What it does:**
+1. Reads NEM12 format files line-by-line
+2. Validates each record against NEM12 specifications
+3. Converts meter readings to UTC timezone
+4. Stores valid readings in `meter_reading` table
+5. Stores failed records in `failure_reading` table with detailed error information
+6. Logs all failures to console for real-time monitoring
 
-- JDK 11 or higher
-- Gradle (or use included wrapper)
+### 1-2. Dependencies
 
-### Build
+**Runtime Dependencies:**
+- **JDK 21**: Java Development Kit
+- **Kotlin**: Modern JVM language with null-safety and type inference
+- **SQLite**: Embedded database for data storage
+
+**Development Dependencies:**
+- **Gradle**: Build automation tool
+- **JUnit**: Testing framework
+- **Kotest**: Kotlin-specific assertions
+- **Ktlint**: Kotlin code style checker and formatter
+
+### 1-3. How to Run
+
+#### Prerequisites
+- JDK 21 or higher installed
+- No additional software required (SQLite is embedded)
+
+#### Build the Project
 
 ```bash
+# Clone the repository
+cd nem12-parser
+
+# Build the project (runs tests automatically)
 ./gradlew clean build
 ```
 
-This generates: `build/libs/nem12-parser-1.0.0-standalone.jar`
+#### Run the Parser
 
-### Usage
+**Basic Usage:**
+```bash
+java -jar build/libs/nem12-parser-1.0.0-standalone.jar <input-file> <output-database>
+```
+
+**Examples:**
+```bash
+# Parse a NEM12 file and store results in output.db
+java -jar build/libs/nem12-parser-1.0.0-standalone.jar ./src/test/resources/sample.nem12 output.db
+
+# Custom batch size (default: 50)
+java -jar build/libs/nem12-parser-1.0.0-standalone.jar ./src/test/resources/sample.nem12 output.db --batch-size=500
+```
+
+#### Using Gradle Run Task (Development)
 
 ```bash
-# Using PostgreSQL COPY (fastest)
-java -jar build/libs/nem12-parser-1.0.0-standalone.jar input.nem12 output.sql
+# Run with default test file
+./gradlew run
 
-# Using Batch INSERT
-java -jar build/libs/nem12-parser-1.0.0-standalone.jar input.nem12 output.sql --mode=batch
-
-# Custom batch size
-java -jar build/libs/nem12-parser-1.0.0-standalone.jar input.nem12 output.sql --mode=batch --batch-size=500
+# Run with custom arguments
+./gradlew run --args="input.csv output.db"
 ```
 
-### Execute SQL
+#### View Results
+
+**Query the database:**
+```bash
+# Open SQLite database
+sqlite3 output.db
+
+# View successful meter readings
+SELECT * FROM meter_reading LIMIT 10;
+
+# View failed records with reasons
+SELECT line_number, failure_reason, nmi, raw_value
+FROM failure_reading
+ORDER BY line_number;
+```
+
+#### Run Tests
 
 ```bash
-# PostgreSQL
-psql -d your_database -f output.sql
+# Run all tests
+./gradlew test
 ```
 
-## Architecture
+#### Code Quality Checks
 
-### Core Components
+```bash
 
-```
-┌──────────────┐
-│ NEM12 File   │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────────┐
-│  NEM12Parser     │  State Machine
-│  - ParserState   │  - Tracks NMI context
-│  - RecordParser  │  - Validates structure
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────┐
-│ SQLGenerator     │  Strategy Pattern
-│ - CopyCommand    │  - PostgreSQL COPY
-│ - BatchInsert    │  - Standard INSERT
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────┐
-│  SQL Output  │
-└──────────────┘
+# Auto-format code
+./gradlew ktlintFormat
 ```
 
-### Key Classes
+#### Output Files
 
-#### 1. Data Model
+After running the parser, you'll find:
+- **`<output-database>.db`**: SQLite database with two tables:
+    - `meter_reading`: Successfully parsed meter readings
+    - `failure_reading`: Failed records with error details
+
+#### Console Output Example
+
+```
+INFO  - Starting to parse file: sample.nem12
+WARN  - Parsing failure - Line 15: NEGATIVE_VALUE (NMI: 1234567890, Interval: 5, Time: 2024-01-01T12:00, Raw: '-10.5')
+INFO  - Successfully parsed 1523 lines
+INFO  - Parsing completed successfully
+Database created: output.db
+Failed records:
+  NEGATIVE_VALUE: 2
+  EMPTY_VALUE: 5
+  INTERVAL_COUNT_MISMATCH: 1
+Failed records database: output.db
+```
+
+---
+
+## 2. Architecture
+
+### 2-1. Project Architecture Overview
+
+The NEM12 Parser follows a **Layered Architecture** pattern with clear separation of concerns across three main layers:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Main (CLI)                         │
+│              - Command-line argument parsing            │
+│              - Dependency injection setup               │
+└────────────────────┬────────────────────────────────────┘
+                     │
+         ┌───────────┴───────────┐
+         ▼                       ▼
+┌──────────────────┐    ┌──────────────────┐
+│  Failure Handler │    │  Parser Service  │
+│    (Composite)   │◄───│   (NEM12Parser)  │
+├──────────────────┤    ├──────────────────┤
+│ - Database       │    │ - File reading   │
+│ - Logging        │    │ - State machine  │
+│ - (Extensible)   │    │ - Validation     │
+└──────────────────┘    └────────┬─────────┘
+                                 │
+                    ┌────────────┴────────────┐
+                    ▼                         ▼
+         ┌──────────────────┐      ┌──────────────────┐
+         │ Record Parser    │      │   Repository     │
+         │    Service       │      │  (Data Access)   │
+         ├──────────────────┤      ├──────────────────┤
+         │ - Interval data  │      │ - Meter reading  │
+         │ - Validation     │      │ - Failure record │
+         │ - Failure notify │      │ - Batch insert   │
+         └──────────────────┘      └──────────────────┘
+                                            │
+                                            ▼
+                                   ┌──────────────────┐
+                                   │  SQLite Database │
+                                   │ - meter_reading  │
+                                   │ - failure_reading│
+                                   └──────────────────┘
+```
+
+### 2-2. Component Descriptions
+
+#### **Layer 1: Handler (Entry Point)**
+
+**Main.kt** - Application entry point
+- Parses command-line arguments
+- Creates and wires dependencies
+- Orchestrates the parsing workflow
+- Displays statistics and results
+
+#### **Layer 2: Service (Business Logic)**
+
+**NEM12ParserService** - Main parsing orchestration
+- Reads NEM12 file line-by-line
+- Maintains parser state
+- Delegates interval data parsing to RecordParserService
+- Saves valid readings to repository
+
+**RecordParserService** - Interval data parsing and validation
+- Parses 300 (interval data) records
+- Checks interval count against expected count
+- Notifies FailureHandler for invalid records
+- Returns list of valid MeterReading objects
+
+
+#### **Layer 3: Handler (Failure Processing)**
+
+**FailureHandler (Interface)** - Defines failure handling contract
+
+**Implementations:**
+1. **DatabaseFailureHandler** - Persists failures to SQLite
+2. **LoggingFailureHandler** - Logs failures to console
+3. **CompositeFailureHandler** - Combines multiple handlers (Composite Pattern)
+
+**Benefits:**
+- Easy to add new handlers (e.g., EmailHandler, MetricsHandler)
+- Separation of concerns
+- Testability through interfaces
+
+#### **Layer 4: Repository (Data Access)**
+
+**BaseSQLiteRepository<T>**
+- Handles batch processing
+- **Provides timezone conversion utility (AEST → UTC)**
+- Implements common operations
+
+**Concrete Implementations:**
+
+1. **MeterReadingRepositoryImpl**
+    - Stores valid meter readings
+    - Generates UUID for each record
+    - Tracks total inserted count
+
+2. **FailureReadingsRepositoryImpl**
+    - Stores failed parsing records
+    - Tracks statistics by failure reason
+    - Supports nullable fields (timestamp, interval index)
+
+### 2-3. Design Patterns Used
+
+| Pattern | Usage | Benefit |
+|---------|-------|---------|
+| **Layered Architecture** | Handler-Service-Repository | Separation of concerns, testability |
+| **Template Method** | BaseSQLiteRepository | Code reuse, consistent behavior |
+| **Composite** | CompositeFailureHandler | Combine multiple handlers flexibly |
+| **Strategy** | FailureHandler implementations | Swap handling strategies at runtime |
+| **State Machine** | ParserState | Track NEM12 file structure hierarchy |
+| **Dependency Injection** | Constructor injection | Loose coupling, testability |
+
+### 2-4. Database Schema
+
+**meter_reading table:**
+```sql
+CREATE TABLE meter_reading (
+    id TEXT PRIMARY KEY,                    -- UUID
+    nmi VARCHAR(10) NOT NULL,               -- Meter identifier
+    timestamp TIMESTAMP NOT NULL,           -- UTC timestamp
+    consumption NUMERIC NOT NULL,           -- Energy consumption (15.4 format)
+    UNIQUE(nmi, timestamp)                  -- Prevent duplicates
+);
+```
+
+**failure_reading table:**
+```sql
+CREATE TABLE failure_reading (
+    id TEXT PRIMARY KEY,                    -- UUID
+    line_number INTEGER NOT NULL,           -- Source line in input file
+    nmi TEXT,                               -- Meter identifier 
+    interval_index INTEGER,                 -- Interval position
+    raw_value TEXT NOT NULL,                -- Original invalid value
+    failure_reason TEXT NOT NULL,           -- Reason enum
+    timestamp TIMESTAMP                     -- Timestamp
+);
+```
+
+---
+
+## 3. Major Decisions
+
+### 3-1. File Reading Strategy
+
+**Decision: Streaming (line-by-line) approach**
 
 ```kotlin
-data class MeterReading(
-    val nmi: String,
-    val timestamp: LocalDateTime,
-    val consumption: BigDecimal
-)
-```
-
-#### 2. Parser
-
-```kotlin
-class NEM12Parser(private val sqlGenerator: SQLGenerator) {
-    fun parse(filePath: Path) {
-        // Stream-based line-by-line processing
-        // State machine handles 100/200/300/500/900 records
+// Using BufferedReader with lineSequence()
+cmd.inputPath.bufferedReader().use { reader ->
+    reader.lineSequence().forEach { line ->
+        parseLine(line.trim())
     }
 }
 ```
 
-#### 3. SQL Generators
+**Why:**
+- No need to load entire file into memory
+
+### 3-2. Best-Effort Parsing
+
+**Decision: Continue parsing even when individual records fail**
 
 ```kotlin
-interface SQLGenerator : Closeable {
-    fun addReading(reading: MeterReading)
-    fun flush()
+failureHandler.use {
+    for (i in 0 until expectedIntervals) {
+        if (!isValid(value)) {
+            failureHandler.handleFailure(record)  // Log and continue
+            continue
+        }
+        readings.add(validReading)
+    }
 }
-
-class CopyCommandGenerator(outputPath: Path) : SQLGenerator
-class BatchInsertGenerator(outputPath: Path, batchSize: Int) : SQLGenerator
 ```
 
-## Database Schema
+**Why:**
+- **Maximize data extraction** from partially corrupted files
+- Better user experience (get some data vs. nothing)
+- Detailed failure tracking for debugging
 
-```sql
-create table meter_reading (
-    id uuid default gen_random_uuid() not null,
-    nmi varchar(10) not null,
-    timestamp timestamp not null,
-    consumption numeric not null,
-    constraint meter_reading_pk primary key (id),
-    constraint meter_reading_unique_consumption unique (nmi, timestamp)
-);
+**Alternative considered:**
+- Fail-fast approach (stop on first error)
+- Rejected because: Real-world files often have isolated errors
+
+### 3-3. Batch Insert Optimization
+
+**Decision: Buffer records and insert in batches**
+
+```kotlin
+fun save(entity: T) {
+    insertStatement.addBatch()
+    batchCount++
+
+    if (batchCount >= batchSize) {
+        executeBatch()  // Execute when batch is full
+    }
+}
 ```
 
-## NEM12 Format Overview
+**Why: Performance**
+- Reduces database I/O operations
+- Efficient use of database connection
 
-| Record Type | Code | Description |
-|-------------|------|-------------|
-| Header | 100 | File metadata |
-| NMI Data | 200 | Meter identifier and interval settings |
-| Interval Data | 300 | Actual consumption readings (48 values for 30-min intervals) |
-| NMI End | 500 | End of meter data block |
-| File End | 900 | End of file |
+### 3-4. Timezone Conversion (AEST → UTC)
 
-### Example Transformation
+**Decision: Convert all timestamps to UTC before storage**
 
-**Input (NEM12):**
-```
-200,NEM1201009,E1E2,1,E1,N1,01009,kWh,30,20050610
-300,20050301,0.461,0.810,...
+```kotlin
+fun aestToUtc(timestamp: LocalDateTime): LocalDateTime {
+    return timestamp.atZone(AEST)
+        .withZoneSameInstant(UTC)
+        .toLocalDateTime()
+}
 ```
 
-**Output (PostgreSQL COPY):**
-```sql
-COPY meter_reading (nmi, timestamp, consumption) FROM STDIN WITH (FORMAT CSV);
-NEM1201009,2005-03-01 00:00:00,0.461
-NEM1201009,2005-03-01 00:30:00,0.810
-\.
+**Why:**
+- **DST handling**: Automatically handles AEST ↔ AEDT transitions
+- **International compatibility**: UTC is standard for data storage
+
+**from Shishir**
+> Input date timezone is AEST, UTC+10:00, and can be stored in the database as UTC
+
+### 3-5. Composite Handler Pattern
+
+**Decision: Multiple failure handlers combined via CompositeFailureHandler**
+
+```kotlin
+val databaseHandler = DatabaseFailureHandler(repository)
+val loggingHandler = LoggingFailureHandler()
+val compositeHandler = CompositeFailureHandler(databaseHandler, loggingHandler)
 ```
 
-## Design Decisions
+**Why:**
+- **Flexibility**: Enable/disable handlers independently
+- **Extensibility**: Easy to add new handlers (email, metrics, etc.)
+- **Single Responsibility**: Each handler does one thing
 
-### Q1: Technology Rationale
 
-**Kotlin:**
-- Modern, concise syntax reduces boilerplate
-- Null-safety prevents common runtime errors
-- Excellent Java interoperability
-- Strong type system with data classes
-- Expressive DSL capabilities
+---
 
-**Gradle:**
-- Kotlin DSL for type-safe build configuration
-- Superior dependency management
-- Fast incremental builds
+## 4. How AI Was Used in This Project
 
-**PostgreSQL COPY:**
-- 2-5x faster than batch INSERT
-- Industry standard for bulk loading
-- Direct database protocol optimization
+### 4-1. Design Phase: Architecture Planning
 
-### Q2: Future Improvements
+**Tool: Claude**
 
-Given more time, I would add:
+Used AI for architectural decision validation before implementation.
 
-1. **Parallel Processing**: Chunk-based parallel parsing for multi-core utilization
-2. **Progress Reporting**: Real-time progress bar for large files
-3. **Data Quality Reports**: Statistics on skipped values, outliers, validation failures
-4. **Direct Database Connection**: JDBC-based direct insert with transaction management
-5. **Additional Output Formats**: JSON, Parquet, CSV for data analysis workflows
-6. **Comprehensive Testing**: Property-based testing, performance benchmarks
-7. **Resume Capability**: Checkpoint system to resume interrupted processing
+**Example:**
+- Validated Repository and Composite patterns
 
-### Q3: Design Choices Rationale
+### 4-2. Initial Code Implementation
 
-1. **Streaming vs. Loading Entire File**
-   - **Choice**: Streaming with BufferedReader
-   - **Why**: Constant memory usage regardless of file size
-   - **Tradeoff**: Cannot random access, must process sequentially
+**Tool: Claude Code**
 
-2. **State Machine Pattern**
-   - **Choice**: Explicit state tracking with ParserState
-   - **Why**: NEM12's hierarchical structure (200→300→500)
-   - **Tradeoff**: Slightly more complex than linear processing
+AI assisted with code generation and Kotlin idioms:
+- Generated BaseSQLiteRepository structure
+- Implemented timezone conversion logic
+- Created test scaffolding
 
-3. **Strategy Pattern for SQL Generation**
-   - **Choice**: Interface with multiple implementations
-   - **Why**: Flexibility to choose optimal method per use case
-   - **Tradeoff**: Additional abstraction layer
+### 4-3. Automated Code Review
 
-4. **Immutable Data Classes**
-   - **Choice**: Kotlin data classes with `val`
-   - **Why**: Thread-safety, functional programming style
-   - **Tradeoff**: Cannot modify after creation
+**Tool: Claude Bot + GitHub Actions**
 
-5. **Fail-Fast Error Handling**
-   - **Choice**: Throw ParseException on first error
-   - **Why**: Ensures data integrity, prevents bad data in DB
-   - **Tradeoff**: Cannot do partial processing (could add best-effort mode)
+Set up AI-powered code review on pull requests.([Sample](https://github.com/ChanHHOO/flo-energy-tech-assessment/pull/16))
 
-## Performance
+**Impact:** Instant feedback and validate code quality
 
-**Expected Performance (1GB file, ~10M records):**
-- Parsing: ~20-30 seconds
-- SQL Generation (COPY): ~10-15 seconds
-- Memory Usage: <100MB (constant)
-- **Total Time: ~30-45 seconds**
+### 4-4. NEM12 Format Analysis
 
-**Optimization Techniques:**
-- Line-by-line streaming (no full file in memory)
-- Batch buffering (reduces I/O operations)
-- String operations without regex (faster parsing)
-- Direct date construction (avoid DateTimeFormatter overhead)
+**Tool: Google NotebookLM**
 
-## Testing
+Analyzed NEM12 specification documents to extract requirements.
 
-Run tests:
-```bash
-./gradlew test
-```
-
-Sample test file included: `src/test/resources/sample.nem12`
-
-## Project Structure
-
-```
-nem12-parser/
-├── build.gradle.kts
-├── src/
-│   ├── main/
-│   │   ├── kotlin/com/flo/nem12/
-│   │   │   ├── Main.kt
-│   │   │   ├── model/
-│   │   │   │   ├── MeterReading.kt
-│   │   │   │   └── RecordType.kt
-│   │   │   ├── parser/
-│   │   │   │   ├── NEM12Parser.kt
-│   │   │   │   ├── RecordParser.kt
-│   │   │   │   ├── ParserState.kt
-│   │   │   │   └── TimestampCalculator.kt
-│   │   │   ├── generator/
-│   │   │   │   ├── SQLGenerator.kt
-│   │   │   │   ├── CopyCommandGenerator.kt
-│   │   │   │   └── BatchInsertGenerator.kt
-│   │   │   └── exception/
-│   │   │       └── ParseException.kt
-│   │   └── resources/
-│   │       └── logback.xml
-│   └── test/
-│       ├── kotlin/com/flo/nem12/
-│       └── resources/
-│           └── sample.nem12
-└── README.md
-```
-
-## License
-
-This project is for the Flo Energy Tech Assessment.
-
-## Author
-
-Developed as part of Flo Energy technical assessment, demonstrating production-grade Kotlin development practices.
+**Process:**
+1. Uploaded NEM12 spec PDFs to NotebookLM
+2. Asked questions about record types and validation rules
+3. Generated summary of key requirements
