@@ -25,7 +25,7 @@ class FailureReadingsRepositoryImpl(
 ) : BaseSQLiteRepository<FailureRecord>(connection, batchSize), FailureReadingsRepository {
     private val statistics = mutableMapOf<FailureReason, Int>()
 
-    override fun getCreateTableSql(): String = DatabaseConfig.CREATE_FAILED_READINGS_TABLE_SQL
+    override fun getCreateTableSql(): String = DatabaseConfig.CREATE_FAILURE_READINGS_TABLE_SQL
 
     override fun getInsertSql(): String = DatabaseConfig.INSERT_FAILED_READING_SQL
 
