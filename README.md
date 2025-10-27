@@ -369,7 +369,7 @@ val compositeHandler = CompositeFailureHandler(databaseHandler, loggingHandler)
 
 ---
 
-## 4. How AI Was Used in This Project
+## 4. How AI Was Used in This Project (AI Driven Development)
 
 ### 4-1. Design Phase: Architecture Planning
 
@@ -407,3 +407,35 @@ Analyzed NEM12 specification documents to extract requirements.
 1. Uploaded NEM12 spec PDFs to NotebookLM
 2. Asked questions about record types and validation rules
 3. Generated summary of key requirements
+
+
+---
+
+## 5. Project Management
+
+This project was managed using **GitHub Issues** and **Pull Requests** to track tasks, document decisions, and maintain code quality through systematic review processes.
+
+### Task Management Workflow
+
+**GitHub Issues** - Used for:
+- Feature planning and requirements tracking
+- Bug tracking and resolution
+- Design decision documentation
+
+**Pull Requests** - Used for:
+- Code review and quality assurance
+- Feature integration
+
+### Key Practices
+
+- **Issue-driven development**: Each feature/fix linked to a specific issue
+- **Branch strategy**: Feature branches merged via PR
+- **Code review**: All changes reviewed before merging
+- **Automated testing**: CI/CD pipeline validates every PR
+- **Clear commit messages**: Descriptive commits referencing issues
+
+### Links
+
+- **Closed Issues**: [View all completed tasks](https://github.com/ChanHHOO/flo-energy-tech-assessment/issues?q=is%3Aissue+state%3Aclosed)
+- **Closed Pull Requests**: [View all merged changes](https://github.com/ChanHHOO/flo-energy-tech-assessment/pulls?q=is%3Apr+is%3Aclosed)
+
