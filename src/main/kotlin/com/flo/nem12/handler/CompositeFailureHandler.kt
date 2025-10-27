@@ -26,16 +26,8 @@ class CompositeFailureHandler(
     }
 
     override fun getStatistics(): Map<FailureReason, Int> {
-        // Aggregate statistics from all handlers
-        val aggregated = mutableMapOf<FailureReason, Int>()
-
-        handlers.forEach { handler ->
-            handler.getStatistics().forEach { (reason, count) ->
-                aggregated[reason] = aggregated.getOrDefault(reason, 0) + count
-            }
-        }
-
-        return aggregated
+        // Return statistics from the first handler to avoid double counting
+        return handlers.firstOrNull()?.getStatistics() ?: emptyMap()
     }
 
     override fun close() {

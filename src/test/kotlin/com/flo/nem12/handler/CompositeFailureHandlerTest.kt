@@ -35,7 +35,7 @@ class CompositeFailureHandlerTest {
     }
 
     @Test
-    fun `should aggregate statistics from multiple handlers`() {
+    fun `should return statistics from first handler`() {
         // Given
         val handler1 = LoggingFailureHandler()
         val handler2 = LoggingFailureHandler()
@@ -65,10 +65,10 @@ class CompositeFailureHandlerTest {
         compositeHandler.handleFailure(failure1)
         compositeHandler.handleFailure(failure2)
 
-        // Then - Statistics should be aggregated from both handlers
+        // Then - Statistics should come from first handler only (to avoid double counting)
         val stats = compositeHandler.getStatistics()
-        assertEquals(2, stats[FailureReason.NEGATIVE_VALUE]) // Each handler counted once
-        assertEquals(2, stats[FailureReason.EMPTY_VALUE])
+        assertEquals(1, stats[FailureReason.NEGATIVE_VALUE])
+        assertEquals(1, stats[FailureReason.EMPTY_VALUE])
 
         // Clean up
         compositeHandler.close()
