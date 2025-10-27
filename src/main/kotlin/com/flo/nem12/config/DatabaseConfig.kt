@@ -10,7 +10,7 @@ object DatabaseConfig {
     const val DEFAULT_BATCH_SIZE = 50
 
     const val CREATE_TABLE_SQL = """
-        CREATE TABLE IF NOT EXISTS meter_readings (
+        CREATE TABLE IF NOT EXISTS meter_reading (
             id TEXT PRIMARY KEY,
             nmi VARCHAR(10) NOT NULL,
             timestamp TIMESTAMP NOT NULL,
@@ -20,14 +20,14 @@ object DatabaseConfig {
     """
 
     const val INSERT_SQL = """
-        INSERT OR IGNORE INTO meter_readings (id, nmi, timestamp, consumption)
+        INSERT OR IGNORE INTO meter_reading (id, nmi, timestamp, consumption)
         VALUES (?, ?, ?, ?)
     """
 
     const val TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss"
 
     const val CREATE_FAILED_READINGS_TABLE_SQL = """
-        CREATE TABLE IF NOT EXISTS failed_readings (
+        CREATE TABLE IF NOT EXISTS failure_reading (
             id TEXT PRIMARY KEY,
             line_number INTEGER NOT NULL,
             nmi TEXT,
@@ -39,7 +39,7 @@ object DatabaseConfig {
     """
 
     const val INSERT_FAILED_READING_SQL = """
-        INSERT INTO failed_readings (id, line_number, nmi, interval_index, raw_value, failure_reason, timestamp)
+        INSERT INTO failure_reading (id, line_number, nmi, interval_index, raw_value, failure_reason, timestamp)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """
 }
